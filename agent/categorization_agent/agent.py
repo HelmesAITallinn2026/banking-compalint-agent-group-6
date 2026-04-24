@@ -10,6 +10,7 @@ from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
 from database import create_agent_log, get_complaint_by_id, get_db, update_complaint_status
+from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe
 
@@ -134,6 +135,12 @@ async def run_categorization_agent(complaint_id: str):
     extracted_data = complaint.get("extracted_data")
     if extracted_data:
         input_text += f"\nExtracted Data:\n{extracted_data}\n"
+
+    if complaint.get("refusal_reason") in SUPPORTED_MORTGAGE_REFUSAL_REASONS:
+        input_text += (
+            "\nThis complaint is a mortgage-decision complaint. "
+            "Prefer Loan Complaints > Mortgage Application Rejection unless the complaint text clearly contradicts that.\n"
+        )
 
     agent = _build_agent()
     handler = get_langfuse_handler(complaint_id)
