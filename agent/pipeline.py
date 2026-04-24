@@ -6,6 +6,7 @@ from data_retrieval_agent import run_data_retrieval_agent
 from database import get_complaint_by_id, update_complaint_status
 from drafting_agent import run_drafting_agent
 from extracting_agent import run_extraction_agent
+from mortgage_rules import should_early_reject_mortgage_case
 from schemas import ComplaintStatus
 from tracing import flush, observe, propagate_attributes
 
@@ -25,6 +26,23 @@ async def run_extraction_pipeline(complaint_id):
         if extracted_raw:
             try:
                 extracted = json.loads(extracted_raw) if isinstance(extracted_raw, str) else extracted_raw
+
+                # Mortgage-documents early rejection
+                if should_early_reject_mortgage_case(
+                    refusal_reason=complaint.get("refusal_reason"),
+                    extracted_data=extracted,
+                ):
+                    logger.info("Complaint %s: mortgage documents incomplete, early exit to drafting", complaint_id)
+                    await run_drafting_agent(
+                        complaint_id,
+                        "NEGATIVE",
+                        "wrong_or_incomplete_documents",
+                        "Submitted mortgage documents were missing or incomplete.",
+                    )
+                    flush()
+                    return
+
+                # Generic irrelevance check
                 if not extracted.get("is_relevant", True):
                     logger.info("Complaint %s: data not relevant, early exit to drafting", complaint_id)
                     await run_drafting_agent(complaint_id, "NEGATIVE", "insufficient_documents",
