@@ -20,8 +20,8 @@ from tracing import get_langfuse_handler, observe
 
 def _build_chat_model(model_name: str | None = None) -> ChatOpenAI:
     return ChatOpenAI(
-        model=model_name or os.getenv("DATA_RETRIEVAL_MODEL") or "openai/gpt-4o-mini",
-        api_key=os.getenv("OPENROUTER_API_KEY") or "test-key",
+        model=model_name or os.getenv("DATA_RETRIEVAL_MODEL"),
+        api_key=os.getenv("OPENROUTER_API_KEY"),
         base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         temperature=0,
         model_kwargs={"extra_body": {"usage": {"include": True}}},
