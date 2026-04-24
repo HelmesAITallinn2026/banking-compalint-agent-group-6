@@ -9,6 +9,9 @@ import com.bcag6.service.FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +37,12 @@ public class ComplaintController {
     public ResponseEntity<List<ComplaintDto>> getAll(
             @RequestParam(required = false) String status) {
         return ResponseEntity.ok(complaintService.getComplaints(status));
+    }
+
+    @GetMapping("/by-status/{statusId}")
+    @Operation(summary = "Get complaints by status ID")
+    public ResponseEntity<List<ComplaintDto>> getByStatusId(@PathVariable Integer statusId) {
+        return ResponseEntity.ok(complaintService.getComplaintsByStatusId(statusId));
     }
 
     @GetMapping("/{id}")
@@ -68,9 +77,37 @@ public class ComplaintController {
         return ResponseEntity.ok(complaintService.approveComplaint(id));
     }
 
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Change complaint status and update updated_dttm")
+    public ResponseEntity<ComplaintDto> changeStatus(
+            @PathVariable Long id,
+            @RequestParam Integer statusId) {
+        return ResponseEntity.ok(complaintService.changeStatus(id, statusId));
+    }
+
     @GetMapping("/{id}/attachments")
     @Operation(summary = "List attachments for a complaint")
     public ResponseEntity<List<AttachmentDto>> getAttachments(@PathVariable Long id) {
         return ResponseEntity.ok(attachmentService.getAttachmentsByComplaintId(id));
+    }
+
+    @GetMapping("/{complaintId}/attachments/{attachmentId}/file")
+    @Operation(summary = "Download or view an attachment file by complaint ID and attachment ID")
+    public ResponseEntity<Resource> downloadAttachment(
+            @PathVariable Long complaintId,
+            @PathVariable Long attachmentId) throws IOException {
+        ComplaintAttachment meta = attachmentService.getAttachmentEntityForComplaint(complaintId, attachmentId);
+        Resource resource = attachmentService.streamFile(attachmentId);
+
+        String mimeType = meta.getMimeType() != null ? meta.getMimeType() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        boolean viewable = mimeType.startsWith("image/") || mimeType.equals(MediaType.APPLICATION_PDF_VALUE);
+        ContentDisposition disposition = viewable
+            ? ContentDisposition.inline().filename(meta.getFileName()).build()
+            : ContentDisposition.attachment().filename(meta.getFileName()).build();
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(mimeType))
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+            .body(resource);
     }
 }

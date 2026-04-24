@@ -45,6 +45,11 @@ public class ComplaintService {
     }
 
     @Transactional(readOnly = true)
+    public List<ComplaintDto> getComplaintsByStatusId(Integer statusId) {
+        return complaintMapper.toDtoList(complaintRepository.findByStatusIdWithDetails(statusId));
+    }
+
+    @Transactional(readOnly = true)
     public ComplaintDto getComplaintById(Long id) {
         Complaint complaint = complaintRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
@@ -119,6 +124,30 @@ public class ComplaintService {
         String customerEmail = complaint.getCustomer().getEmail();
         emailService.sendDraftEmail(customerEmail,
             complaint.getDraftEmailSubject(), complaint.getDraftEmailBody());
+
+        return complaintMapper.toDto(
+            complaintRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new IllegalStateException("Complaint not found after update."))
+        );
+    }
+
+    @Transactional
+    public ComplaintDto changeStatus(Long id, Integer statusId) {
+        Complaint complaint = complaintRepository.findByIdWithDetails(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
+
+        ComplaintStatus newStatus = complaintStatusRepository.findById(statusId)
+            .orElseThrow(() -> new ResourceNotFoundException("Status not found with id: " + statusId));
+
+        String oldStatusName = complaint.getStatus().getName();
+        complaint.setStatus(newStatus);
+        complaint.setUpdatedDttm(OffsetDateTime.now());
+        complaintRepository.save(complaint);
+
+        writeStatusLog(complaint, newStatus);
+        writeAuditLog("COMPLAINT", id, AuditAction.UPDATE,
+            "{\"action\":\"statusChange\",\"from\":\"" + escapeJson(oldStatusName) +
+            "\",\"to\":\"" + escapeJson(newStatus.getName()) + "\"}");
 
         return complaintMapper.toDto(
             complaintRepository.findByIdWithDetails(id)

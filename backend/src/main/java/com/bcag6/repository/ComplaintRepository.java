@@ -16,6 +16,9 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Query("SELECT c FROM Complaint c JOIN FETCH c.customer JOIN FETCH c.status LEFT JOIN FETCH c.refusalReason WHERE c.status.name = :statusName ORDER BY c.createdDttm DESC")
     List<Complaint> findByStatusNameWithDetails(@Param("statusName") String statusName);
 
+    @Query("SELECT c FROM Complaint c JOIN FETCH c.customer JOIN FETCH c.status LEFT JOIN FETCH c.refusalReason WHERE c.status.id = :statusId ORDER BY c.createdDttm DESC")
+    List<Complaint> findByStatusIdWithDetails(@Param("statusId") Integer statusId);
+
     @Query("SELECT c FROM Complaint c JOIN FETCH c.customer JOIN FETCH c.status LEFT JOIN FETCH c.refusalReason WHERE c.id = :id")
     Optional<Complaint> findByIdWithDetails(@Param("id") Long id);
 }
