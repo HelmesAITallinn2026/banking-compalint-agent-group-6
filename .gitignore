@@ -127,3 +127,5 @@ desktop.ini
 *.swp
 *.swo
 *~
+.github
+*trace*.json
