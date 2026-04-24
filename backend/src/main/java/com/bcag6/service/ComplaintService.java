@@ -1,5 +1,7 @@
 package com.bcag6.service;
 
+import com.bcag6.dto.AgentDetailDto;
+import com.bcag6.dto.AgentUpdateRequest;
 import com.bcag6.dto.ComplaintDto;
 import com.bcag6.entity.*;
 import com.bcag6.event.AiProcessingPublisher;
@@ -171,6 +173,70 @@ public class ComplaintService {
             complaintRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new IllegalStateException("Complaint not found after update."))
         );
+    }
+
+    @Transactional
+    public ComplaintDto agentUpdate(Long id, AgentUpdateRequest req) {
+        Complaint complaint = complaintRepository.findByIdWithDetails(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
+
+        if (req.getStatusId() != null) {
+            ComplaintStatus newStatus = complaintStatusRepository.findById(req.getStatusId())
+                .orElseThrow(() -> new ResourceNotFoundException("Status not found with id: " + req.getStatusId()));
+            complaint.setStatus(newStatus);
+            writeStatusLog(complaint, newStatus);
+        }
+        if (req.getExtractedData() != null) complaint.setExtractedData(req.getExtractedData());
+        if (req.getCategory() != null) complaint.setCategory(req.getCategory());
+        if (req.getRecommendation() != null) complaint.setRecommendation(req.getRecommendation());
+        if (req.getRecommendationReasoning() != null) complaint.setRecommendationReasoning(req.getRecommendationReasoning());
+        if (req.getDraftEmailSubject() != null) complaint.setDraftEmailSubject(req.getDraftEmailSubject());
+        if (req.getDraftEmailBody() != null) complaint.setDraftEmailBody(req.getDraftEmailBody());
+
+        complaintRepository.save(complaint);
+
+        writeAuditLog("COMPLAINT", id, AuditAction.UPDATE,
+            "{\"action\":\"agentUpdate\",\"statusId\":" + req.getStatusId() + "}");
+
+        return complaintMapper.toDto(
+            complaintRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new IllegalStateException("Complaint not found after update."))
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AgentDetailDto getAgentDetail(Long id) {
+        Complaint complaint = complaintRepository.findByIdWithDetails(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
+
+        AgentDetailDto dto = new AgentDetailDto();
+        dto.setId(complaint.getId());
+        dto.setFirstName(complaint.getCustomer().getFirstName());
+        dto.setLastName(complaint.getCustomer().getLastName());
+        dto.setSubject(complaint.getSubject());
+        dto.setText(complaint.getText());
+        dto.setRefusalReason(complaint.getRefusalReason() != null ? complaint.getRefusalReason().getName() : null);
+        dto.setStatusId(complaint.getStatus().getId());
+        dto.setStatus(complaint.getStatus().getName());
+        dto.setExtractedData(complaint.getExtractedData());
+        dto.setCategory(complaint.getCategory());
+        dto.setRecommendation(complaint.getRecommendation());
+        dto.setRecommendationReasoning(complaint.getRecommendationReasoning());
+        dto.setDraftEmailBody(complaint.getDraftEmailBody());
+        dto.setCreatedDttm(complaint.getCreatedDttm());
+        dto.setUpdatedDttm(complaint.getUpdatedDttm());
+
+        List<ComplaintAttachment> attachments = attachmentRepository.findByComplaint_Id(complaint.getId());
+        dto.setAttachments(attachments.stream().map(a -> {
+            AgentDetailDto.AgentAttachmentDto adto = new AgentDetailDto.AgentAttachmentDto();
+            adto.setId(a.getId());
+            adto.setFileName(a.getFileName());
+            adto.setMimeType(a.getMimeType());
+            adto.setFileSize(a.getFileSize());
+            return adto;
+        }).toList());
+
+        return dto;
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

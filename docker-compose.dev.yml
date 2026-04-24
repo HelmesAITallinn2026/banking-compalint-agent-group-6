@@ -15,9 +15,9 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      # 01/02 run automatically on first start; 00 is skipped (docker handles DB+role creation)
       - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - ./database/04_agent_columns.sql:/docker-entrypoint-initdb.d/04_agent_columns.sql:ro
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U bca_g6_app -d bca-g6"]
@@ -40,6 +40,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bca-g6
       SPRING_DATASOURCE_USERNAME: bca_g6_app
       SPRING_DATASOURCE_PASSWORD: bca_g6_app_change_me
+      APP_AGENT_BASE_URL: http://agent:8000
     volumes:
       - ./backend/src:/app/src:ro
 
@@ -53,11 +54,13 @@ services:
       - "8000:8000"
     env_file:
       - ./agent/.env
+    environment:
+      BACKEND_URL: http://backend:8080
     volumes:
       # Hot-reload: mount source files (exclude .venv and uploads)
       - ./agent/main.py:/app/main.py:ro
       - ./agent/schemas.py:/app/schemas.py:ro
-      - ./agent/database.py:/app/database.py:ro
+      - ./agent/backend_client.py:/app/backend_client.py:ro
       - ./agent/pipeline.py:/app/pipeline.py:ro
       - ./agent/llm_config.py:/app/llm_config.py:ro
       - ./agent/tracing.py:/app/tracing.py:ro
@@ -69,9 +72,8 @@ services:
       - ./agent/data_retrieval_agent:/app/data_retrieval_agent:ro
       - ./agent/drafting_agent:/app/drafting_agent:ro
       - ./agent/mock_docs:/app/mock_docs:ro
-      # Persist uploads and SQLite DB
+      # Persist uploads (temp file cache for attachment downloads)
       - agent_uploads:/app/uploads
-      - agent_db:/app/db
 
   # ── React frontend (Vite dev server) ────────────────────────
   frontend:
@@ -90,4 +92,3 @@ services:
 volumes:
   pgdata:
   agent_uploads:
-  agent_db:

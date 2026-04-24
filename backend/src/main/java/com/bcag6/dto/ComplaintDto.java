@@ -20,4 +20,8 @@ public class ComplaintDto {
     private String draftEmailBody;
     private Integer refusalReasonId;
     private String refusalReason;
+    private String extractedData;
+    private String category;
+    private String recommendation;
+    private String recommendationReasoning;
 }

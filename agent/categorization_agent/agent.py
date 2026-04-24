@@ -9,7 +9,7 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
-from database import create_agent_log, get_complaint_by_id, get_db, update_complaint_status
+from backend_client import create_agent_log, get_complaint_by_id, save_categorization as _save_cat, update_complaint_status
 from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe
@@ -48,12 +48,7 @@ def save_categorization(complaint_id: str, category: str, subcategory: str, reas
 
     async def _save() -> None:
         full_category = f"{category} > {subcategory}"
-        async with get_db() as db:
-            await db.execute(
-                "UPDATE complaints SET category=?, status='categorised', updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (full_category, complaint_id),
-            )
-            await db.commit()
+        await _save_cat(complaint_id, full_category)
         await create_agent_log(
             complaint_id,
             "categorization_agent",

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { getComplaints, approveComplaint } from '../api'
+import { getComplaints, approveComplaint, generateDraft } from '../api'
 import ComplaintCard from '../components/ComplaintCard'
 import ComplaintModal from '../components/ComplaintModal'
 import Spinner from '../components/Spinner'
@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [error,              setError]              = useState(null)
   const [selectedComplaint,  setSelectedComplaint]  = useState(null)
   const [approving,          setApproving]          = useState(false)
+  const [generating,         setGenerating]         = useState(false)
   const [feedback,           setFeedback]           = useState(null)
 
   const loadComplaints = useCallback(async () => {
@@ -53,6 +54,20 @@ export default function Dashboard() {
       setFeedback({ type: 'error', message: 'Approval failed. Please try again.' })
     } finally {
       setApproving(false)
+    }
+  }
+
+  const handleGenerateDraft = async (complaintId, decision) => {
+    setGenerating(true)
+    try {
+      await generateDraft(complaintId, decision)
+      setFeedback({ type: 'success', message: 'Draft generation triggered. Refresh in a moment to see results.' })
+      setSelectedComplaint(null)
+      setTimeout(loadComplaints, 3000)
+    } catch {
+      setFeedback({ type: 'error', message: 'Failed to trigger draft generation.' })
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -114,7 +129,10 @@ export default function Dashboard() {
           onClose={() => setSelectedComplaint(null)}
           onApprove={handleApprove}
           approving={approving}
+          onGenerateDraft={handleGenerateDraft}
+          generating={generating}
           isDraft={TABS[1].statuses.includes(selectedComplaint.status)}
+          isRecommendationReady={selectedComplaint.status === 'Decision Recommendation Created'}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import logging
 
 from categorization_agent import run_categorization_agent
 from data_retrieval_agent import run_data_retrieval_agent
-from database import get_complaint_by_id, update_complaint_status
+from backend_client import get_complaint_by_id, update_complaint_status
 from drafting_agent import run_drafting_agent
 from extracting_agent import run_extraction_agent
 from mortgage_rules import should_early_reject_mortgage_case

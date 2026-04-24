@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError, PdfStreamError
 
-from database import create_agent_log, get_complaint_by_id, save_extracted_data, update_complaint_status
+from backend_client import create_agent_log, get_complaint_by_id, save_extracted_data, update_complaint_status
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe
 

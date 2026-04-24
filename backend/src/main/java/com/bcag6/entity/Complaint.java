@@ -47,6 +47,18 @@ public class Complaint {
     @Column(name = "draft_email_body")
     private String draftEmailBody;
 
+    @Column(name = "extracted_data")
+    private String extractedData;
+
+    @Column(name = "category", length = 512)
+    private String category;
+
+    @Column(name = "recommendation", length = 50)
+    private String recommendation;
+
+    @Column(name = "recommendation_reasoning")
+    private String recommendationReasoning;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "operator_id")
     private Operator operator;

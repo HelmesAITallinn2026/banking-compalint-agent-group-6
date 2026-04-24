@@ -16,7 +16,10 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export default function ComplaintModal({ complaint, onClose, onApprove, approving, isDraft }) {
+export default function ComplaintModal({
+  complaint, onClose, onApprove, approving, isDraft,
+  onGenerateDraft, generating, isRecommendationReady,
+}) {
   const [attachments, setAttachments] = useState([])
 
   // Close on Escape key
@@ -76,6 +79,35 @@ export default function ComplaintModal({ complaint, onClose, onApprove, approvin
           <div className="modal__value">{complaint.text}</div>
         </div>
 
+        {/* Agent processing data */}
+        {complaint.category && (
+          <div className="modal__section">
+            <div className="modal__label">Category</div>
+            <div className="modal__value">{complaint.category}</div>
+          </div>
+        )}
+
+        {complaint.recommendation && (
+          <div className="modal__section">
+            <div className="modal__label">AI Recommendation</div>
+            <div className="modal__value" style={{
+              fontWeight: 600,
+              color: complaint.recommendation === 'POSITIVE' ? '#0bdf50' : '#c41c1c',
+            }}>
+              {complaint.recommendation}
+            </div>
+          </div>
+        )}
+
+        {complaint.recommendationReasoning && (
+          <div className="modal__section">
+            <div className="modal__label">Recommendation Reasoning</div>
+            <div className="modal__value" style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>
+              {complaint.recommendationReasoning}
+            </div>
+          </div>
+        )}
+
         {attachments.length > 0 && (
           <>
             <hr className="modal__divider" />
@@ -100,6 +132,34 @@ export default function ComplaintModal({ complaint, onClose, onApprove, approvin
                   </li>
                 ))}
               </ul>
+            </div>
+          </>
+        )}
+
+        {/* Generate Draft buttons — shown when recommendation is ready */}
+        {isRecommendationReady && onGenerateDraft && (
+          <>
+            <hr className="modal__divider" />
+            <div className="modal__section">
+              <div className="modal__label">Generate Draft Response</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button
+                  className="btn btn--accent"
+                  style={{ flex: 1 }}
+                  onClick={() => onGenerateDraft(complaint.id, 'POSITIVE')}
+                  disabled={generating}
+                >
+                  {generating ? 'Generating…' : '✓ Accept (Positive)'}
+                </button>
+                <button
+                  className="btn btn--outline"
+                  style={{ flex: 1 }}
+                  onClick={() => onGenerateDraft(complaint.id, 'NEGATIVE')}
+                  disabled={generating}
+                >
+                  {generating ? 'Generating…' : '✗ Reject (Negative)'}
+                </button>
+              </div>
             </div>
           </>
         )}

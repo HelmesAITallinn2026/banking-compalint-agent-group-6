@@ -8,7 +8,7 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
-from database import create_agent_log, get_complaint_by_id, save_draft_response, update_complaint_status
+from backend_client import create_agent_log, get_complaint_by_id, save_draft_response, update_complaint_status
 from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS, get_mortgage_drafting_guidance
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe

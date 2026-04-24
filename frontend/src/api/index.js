@@ -36,3 +36,15 @@ export const getAttachmentFileUrl = (attachmentId) =>
 
 export const approveComplaint = (id) =>
   api.post(`/api/complaints/${id}/approve`).then((r) => r.data)
+
+export const generateDraft = (id, decision, refusalReason = null, clarificationMessage = null) =>
+  api
+    .post(`/api/complaints/${id}/generate-draft`, {
+      decision,
+      refusalReason,
+      clarificationMessage,
+    })
+    .then((r) => r.data)
+
+export const getAgentLogs = (id) =>
+  api.get(`/api/complaints/${id}/agent-logs`).then((r) => r.data)

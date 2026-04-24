@@ -8,7 +8,7 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
-from database import create_agent_log, get_complaint_by_id, save_recommendation
+from backend_client import create_agent_log, get_complaint_by_id, save_recommendation
 from data_retrieval_agent.mock_data import (
     DECISION_RULES,
     get_account_info,
