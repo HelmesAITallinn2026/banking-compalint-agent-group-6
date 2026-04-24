@@ -1,30 +1,37 @@
 Flow:
 - User enter Customer View
-- User choose “complaint form”
+- User choose "complaint form"
 - Fills up COMPLAINT FORM [name surname preloaded; subject; message; refusal reason preloaded; files input]
+  - refusal_reason must be one of: not_enough_income, not_enough_transactions, wrong_or_incomplete_documents (or empty for non-mortgage complaints)
 - Sends complaint
 - Complain goes FrontEnd -> BackEnd
+- BE validates refusal_reason at intake (rejects unknown values with 422)
 - BE stores complaint in DB with status
 - BE sends complaint to ExtractionAgent
     - ExtractionAgent analyses document type
     - ExtractionAgent reads document directly or OCR it
     - ExtractionAgent extract data from document content
+    - For mortgage-decision complaints, ExtractionAgent copies the refusal reason and populates mortgage-specific fields (missing_documents, income_summary, transaction_summary)
     - ExtractionAgent checks if data is relevant:
         - ExtractionAgent checks the needed document for this type of case
         - ExtractionAgent validates if provided data is relevant (it may be image of cat instead of income proof)
         - ExtractionAgent validates if provided data is enough to push form further (if the needed documents were applied, in general if we have data to work on)
+        - For mortgage wrong_or_incomplete_documents cases: early exit to drafting with NEGATIVE if documents are missing
         - If yes, process go further
-        - If no, ExtractionAgent passes flow to Drafting Agent to create Negative response with “insufficient document” response
+        - If no, ExtractionAgent passes flow to Drafting Agent to create Negative response with "insufficient document" response
     - Prepared form with exctracted data is passed to CategorizationAgent
     - CategorizationAgent pulls categorisation rules from DB / Backend
+    - For mortgage complaints, CategorizationAgent biases toward Loan Complaints > Mortgage Application Rejection
     - CategorizationAgent categories ticket and add it to the ticket data
     - Ticket datapoint is passed to DataRetrievalAgent (DRA)
-    - DRA retrieves all necessary data from backend
+    - For mortgage complaints, DRA retrieves mortgage underwriting assessment (income thresholds, transaction counts, or missing documents)
+    - For generic complaints, DRA retrieves customer/account/transaction data as before
     - DRA give recommendations whether decision should be POSITIVE or NEGATIVE.
     - Recommendation is saved to DB (through backend)
-- On frontend (admin panel) complaint is loaded with current status: “Recommendation from system”
+- On frontend (admin panel) complaint is loaded with current status: "Recommendation from system"
 - Human approves recommendation or not
 - DraftingAgent gets Complaint DataPoint with decision (verified by human) and draft message Saving it to DB (through backend)
-- Draft is loaded in frontend with ability to change it’s content (let’s assume decision can’t be changed here - just for simplicity)
+- For mortgage complaints, DraftingAgent uses reason-specific guidance (income shortfall, transaction gaps, or missing documents)
+- Draft is loaded in frontend with ability to change its content (decision cannot be changed here for simplicity)
 - After adjustments to text (or not) message is sent to customer
 - Complaint status is marked as completed.

@@ -27,6 +27,7 @@ This is demo code. Keep it simple, readable, and easy to ship.
 - `data_retrieval_agent/` — mock banking data lookup + recommendation
 - `drafting_agent/` — response letter generation
 - `schemas.py` — request/response/status models
+- `mortgage_rules.py` — canonical mortgage refusal reasons, helpers, drafting guidance
 - `.env.example` — required env vars
 - `tests/` — current test suite
 - `uploads/` — saved complaint files
@@ -175,8 +176,10 @@ Drafting agent
 - `last_name`
 - `subject`
 - `message`
-- `refusal_reason` *(optional)*
+- `refusal_reason` *(optional)* — if provided, must be one of: `not_enough_income`, `not_enough_transactions`, `wrong_or_incomplete_documents`
 - `files` *(0..n multipart uploads)*
+
+Mortgage application rejection complaints use mortgage-specific extraction, categorization, recommendation, and drafting rules. Non-mortgage complaints continue through the generic complaint flow.
 
 Uploaded files are stored in `agent/uploads/` as:
 
@@ -292,6 +295,7 @@ Files:
 
 - `data_retrieval_agent/agent.py`
 - `data_retrieval_agent/mock_data.py`
+- `data_retrieval_agent/mortgage_mock_data.py`
 
 Responsibilities:
 
