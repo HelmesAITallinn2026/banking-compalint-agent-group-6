@@ -18,8 +18,8 @@ COMPLAINT_TREE_PATH = Path(__file__).resolve().parent / "complaint_tree.json"
 
 def _build_chat_model(model_name: str | None = None) -> ChatOpenAI:
     return ChatOpenAI(
-        model=model_name or os.getenv("CATEGORIZATION_MODEL") or "openai/gpt-4o-mini",
-        api_key=os.getenv("OPENROUTER_API_KEY") or "test-key",
+        model=model_name or os.getenv("CATEGORIZATION_MODEL"),
+        api_key=os.getenv("OPENROUTER_API_KEY"),
         base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         temperature=0,
         model_kwargs={"extra_body": {"usage": {"include": True}}},
