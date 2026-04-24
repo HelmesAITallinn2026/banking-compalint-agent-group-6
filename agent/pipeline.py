@@ -1,44 +1,52 @@
-from database import create_agent_log, save_draft_response, save_recommendation, update_complaint_status
+import json
+import logging
+
+from categorization_agent import run_categorization_agent
+from data_retrieval_agent import run_data_retrieval_agent
+from database import get_complaint_by_id, update_complaint_status
+from drafting_agent import run_drafting_agent
 from extracting_agent import run_extraction_agent
 from schemas import ComplaintStatus
 from tracing import flush, observe, propagate_attributes
 
+logger = logging.getLogger(__name__)
+
 
 @observe(name="extraction-pipeline")
 async def run_extraction_pipeline(complaint_id):
-    """Run extraction agent, then placeholder categorization + recommendation."""
+    """Run full pipeline: extraction → categorization → data retrieval → recommendation_ready."""
     with propagate_attributes(session_id=complaint_id, tags=["hackathon", "banking-complaint"]):
+        # Step 1: Extraction
         await run_extraction_agent(complaint_id)
 
-        # Placeholder: categorization agent (to be implemented separately)
-        await update_complaint_status(complaint_id, ComplaintStatus.categorised)
-        await create_agent_log(complaint_id, "categorization_agent", "categorize",
-            {"complaint_id": complaint_id}, "Assigned placeholder category.",
-            {"category": "general_banking_complaint", "status": ComplaintStatus.categorised})
+        # Check if extracted data is relevant — early exit if not
+        complaint = await get_complaint_by_id(complaint_id)
+        extracted_raw = complaint.get("extracted_data") if complaint else None
+        if extracted_raw:
+            try:
+                extracted = json.loads(extracted_raw) if isinstance(extracted_raw, str) else extracted_raw
+                if not extracted.get("is_relevant", True):
+                    logger.info("Complaint %s: data not relevant, early exit to drafting", complaint_id)
+                    await run_drafting_agent(complaint_id, "NEGATIVE", "insufficient_documents",
+                                            "Submitted documents were not relevant or incomplete.")
+                    flush()
+                    return
+            except (json.JSONDecodeError, AttributeError):
+                pass
 
-        # Placeholder: data retrieval agent (to be implemented separately)
-        await create_agent_log(complaint_id, "data_retrieval_agent", "recommendation",
-            {"complaint_id": complaint_id}, "Used demo decision rules.",
-            {"recommendation": "POSITIVE", "reasoning": "Ready for human review."})
+        # Step 2: Categorization
+        await run_categorization_agent(complaint_id)
 
-        await save_recommendation(complaint_id, "general_banking_complaint", "POSITIVE", "Ready for human review.")
+        # Step 3: Data Retrieval + Recommendation
+        await run_data_retrieval_agent(complaint_id)
+
+        # Pipeline stops here — status is recommendation_ready, waiting for human review
     flush()
 
 
 @observe(name="drafting-pipeline")
 async def run_drafting_pipeline(complaint_id, decision, refusal_reason=None, clarification_message=None):
-    """Placeholder pipeline: draft a response letter."""
+    """Run the drafting agent to generate a formal response letter."""
     with propagate_attributes(session_id=complaint_id, tags=["hackathon", "banking-complaint"]):
-        await update_complaint_status(complaint_id, ComplaintStatus.draft_created)
-        draft = (
-            f"Dear customer,\n\n"
-            f"We reviewed your complaint and the decision is {decision}.\n\n"
-            f"Refusal reason: {refusal_reason or 'N/A'}\n"
-            f"Clarification: {clarification_message or 'N/A'}\n\n"
-            f"Kind regards,\nBank Complaint Team"
-        )
-        await create_agent_log(complaint_id, "message_drafting_agent", "draft_response",
-            {"decision": decision, "refusal_reason": refusal_reason, "clarification_message": clarification_message},
-            "Built placeholder response.", {"draft_response": draft, "status": ComplaintStatus.draft_created})
-        await save_draft_response(complaint_id, draft)
+        await run_drafting_agent(complaint_id, decision, refusal_reason, clarification_message)
     flush()
