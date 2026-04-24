@@ -9,13 +9,14 @@ from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
 from database import create_agent_log, get_complaint_by_id, save_draft_response, update_complaint_status
+from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS, get_mortgage_drafting_guidance
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe
 
 
 def _build_chat_model(model_name: str | None = None) -> ChatOpenAI:
     return ChatOpenAI(
-        model=model_name or os.getenv("DRAFTING_MODEL")
+        model=model_name or os.getenv("DRAFTING_MODEL"),
         api_key=os.getenv("OPENROUTER_API_KEY"),
         base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         temperature=0.3,
@@ -84,6 +85,12 @@ The letter MUST include:
 - Next steps for the customer
 - Professional closing with bank name
 
+Mortgage-specific instructions:
+- For mortgage application rejection complaints, explain the exact refusal reason.
+- If refusal reason is not_enough_income, mention the income shortfall and acceptable supporting evidence.
+- If refusal reason is not_enough_transactions, mention the insufficient transaction history and what activity evidence is needed.
+- If refusal reason is wrong_or_incomplete_documents, list or reference the missing documents and request resubmission.
+
 Tone: Formal, empathetic, clear. Use professional banking language.
 Sign as: "Customer Relations Department, Helmes Bank"
 
@@ -150,6 +157,8 @@ async def run_drafting_agent(
     )
     if refusal_reason:
         input_text += f"Refusal Reason: {refusal_reason}\n"
+    if refusal_reason in SUPPORTED_MORTGAGE_REFUSAL_REASONS:
+        input_text += f"Mortgage Draft Guidance: {get_mortgage_drafting_guidance(refusal_reason)}\n"
     if clarification_message:
         input_text += f"Clarification Message: {clarification_message}\n"
 

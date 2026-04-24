@@ -27,6 +27,11 @@ class ExtractedComplaint(BaseModel):
     date: str | None = None
     order_id: str | None = None
     is_relevant: bool = True
+    is_mortgage_denial_case: bool = False
+    mortgage_refusal_reason: str | None = None
+    missing_documents: list[str] = []
+    income_summary: str | None = None
+    transaction_summary: str | None = None
 
 
 def _build_chat_model(model_name: str | None = None) -> ChatOpenAI:
@@ -216,6 +221,14 @@ Rules:
 - If `is_relevant = false`, STOP and explain why
 - When calling `save_complaint_data`, pass the complaint_id and the full extracted JSON as a string
 
+Mortgage-specific rules:
+- For mortgage-decision complaints (when a refusal reason is provided), copy the refusal reason from the complaint if it matches the supported values (not_enough_income, not_enough_transactions, wrong_or_incomplete_documents).
+- Set is_mortgage_denial_case=true for mortgage complaints.
+- Populate missing_documents for wrong/incomplete-document cases.
+- Populate income_summary for income-based cases.
+- Populate transaction_summary for transaction-based cases.
+- Non-mortgage complaints should continue to use the generic extraction behavior.
+
 Do not skip steps.
 Do not invent tool results.
 Return a final answer only after the workflow is complete.
@@ -273,6 +286,7 @@ async def run_extraction_agent(complaint_id: str):
         f"Customer: {complaint['first_name']} {complaint['last_name']}\n"
         f"Subject: {complaint['subject']}\n"
         f"Message: {complaint['message']}\n"
+        f"Refusal Reason: {complaint.get('refusal_reason') or 'N/A'}\n"
     )
     if file_descriptions:
         input_text += "\nAttached files:\n" + "\n".join(file_descriptions)

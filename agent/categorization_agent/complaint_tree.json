@@ -13,6 +13,7 @@
       "description": "Issues with loans and credit products",
       "subcategories": {
         "Interest Rate Disputes": "Customer disputes the applied interest rate",
+        "Mortgage Application Rejection": "Customer contests a rejected mortgage application",
         "Loan Denial": "Customer contests loan application rejection",
         "Payment Processing Errors": "Payments not applied correctly or lost",
         "Early Repayment Issues": "Problems with prepaying or settling loans early"
