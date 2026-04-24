@@ -1,0 +1,21 @@
+- [ ] Create FastAPI API for handling AI agent responsiblities
+    - [X] POST /complaint-form: first_name, last_name, subject, message, refusal_reason, files
+    - [ ] POST /draft-response: first_name, last_name, decision, refusal_reason, clarification_message
+- [ ] Create ExtractionAgent
+    - [ ] create tool for analyzing document type - if we can read it directly or we need to ocr
+    - [ ] implement `ocr_document` tool
+    - [ ] implement `extract_data` tool - structured ouput based on documents type
+    - [ ] implement `save_complaint_data` tool - saving to DB through backend
+    - [ ] create system prompt to control the flow
+- [ ] Develop CategorizationAgent
+    - [ ] create system prompt to control the flow
+    - [ ] create tool to `load_complaint_tree`
+    - [ ] create tool `categorize_ticket`
+- [ ] Develop DataRetrievalAgent
+    - [ ] create tool `retrieve_transactions`
+    - [ ] create tool `retrieve_agreements`
+    - [ ] create tool `retrieve_customer_details`
+    - [ ] create tool `give_recommendation` ??
+- [ ] Develop DataRetrievalAgent
+    - [ ] create system prompt to control the flow
+    - [ ] create tool `draft_response`
