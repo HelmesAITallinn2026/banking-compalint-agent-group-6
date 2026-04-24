@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getComplaintAttachments, getAttachmentFileUrl } from '../api'
+import AgentTimeline from './AgentTimeline'
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -135,6 +136,9 @@ export default function ComplaintModal({
             </div>
           </>
         )}
+
+        {/* Agent activity timeline */}
+        <AgentTimeline complaintId={complaint.id} complaintStatus={complaint.status} />
 
         {/* Generate Draft buttons — shown when recommendation is ready */}
         {isRecommendationReady && onGenerateDraft && (
