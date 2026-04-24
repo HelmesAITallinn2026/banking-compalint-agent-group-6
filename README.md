@@ -47,6 +47,23 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 The database connection is configured in [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties).  
 Run the database scripts first (Step 1) before starting the backend.
 
+### File uploads
+
+Complaint attachments are stored on the local filesystem at:
+
+```
+%USERPROFILE%\bca-uploads\      (Windows default, e.g. C:\Users\<you>\bca-uploads)
+~/bca-uploads/                  (Linux / macOS default)
+```
+
+Each file is saved as `<UUID>_<filename>` to prevent name collisions. The original name, path, size, and MIME type are recorded in the `complaint_attachment` database table.
+
+To use a different directory, set `app.upload.dir` in `application.properties`:
+
+```properties
+app.upload.dir=C:/my-custom-upload-dir
+```
+
 ---
 
 ## 3. Frontend
