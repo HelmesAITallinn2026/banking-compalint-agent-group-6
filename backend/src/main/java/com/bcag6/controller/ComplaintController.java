@@ -77,6 +77,14 @@ public class ComplaintController {
         return ResponseEntity.ok(complaintService.approveComplaint(id));
     }
 
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Change complaint status and update updated_dttm")
+    public ResponseEntity<ComplaintDto> changeStatus(
+            @PathVariable Long id,
+            @RequestParam Integer statusId) {
+        return ResponseEntity.ok(complaintService.changeStatus(id, statusId));
+    }
+
     @GetMapping("/{id}/attachments")
     @Operation(summary = "List attachments for a complaint")
     public ResponseEntity<List<AttachmentDto>> getAttachments(@PathVariable Long id) {
