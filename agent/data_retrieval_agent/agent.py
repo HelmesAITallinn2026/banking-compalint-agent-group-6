@@ -15,6 +15,8 @@ from data_retrieval_agent.mock_data import (
     get_customer_details,
     get_transaction_history,
 )
+from data_retrieval_agent.mortgage_mock_data import build_mortgage_assessment
+from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS
 from tracing import get_langfuse_handler, observe
 
 
@@ -26,6 +28,12 @@ def _build_chat_model(model_name: str | None = None) -> ChatOpenAI:
         temperature=0,
         model_kwargs={"extra_body": {"usage": {"include": True}}},
     )
+
+
+@tool
+def retrieve_mortgage_assessment(complaint_id: str, refusal_reason: str) -> dict:
+    """Retrieve mortgage underwriting assessment data for a mortgage-denial complaint."""
+    return build_mortgage_assessment(complaint_id, refusal_reason)
 
 
 @tool
@@ -91,13 +99,15 @@ Your job is to:
 2. Retrieve customer details for the complaint
 3. Retrieve account information
 4. Retrieve transaction history
-5. Analyze all data against the decision rules
-6. Produce a POSITIVE or NEGATIVE recommendation with detailed reasoning
-7. Save the recommendation
+5. For mortgage-denial complaints, also retrieve the mortgage assessment using `retrieve_mortgage_assessment`
+6. Analyze all data against the decision rules
+7. Produce a POSITIVE or NEGATIVE recommendation with detailed reasoning
+8. Save the recommendation
 
 Rules:
 - ALWAYS load decision rules first
-- ALWAYS retrieve ALL data (customer, accounts, transactions) before making a decision
+- For generic complaints: retrieve ALL data (customer, accounts, transactions) before deciding
+- For mortgage-denial complaints: also call `retrieve_mortgage_assessment` with the complaint_id and refusal_reason, and base your recommendation primarily on the mortgage assessment
 - Log WHY you are retrieving each piece of data
 - Your reasoning must reference specific data points
 - Call save_recommendation_result at the end
@@ -109,6 +119,7 @@ TOOLS = [
     retrieve_customer_details,
     retrieve_account_info,
     retrieve_transaction_history,
+    retrieve_mortgage_assessment,
     load_decision_rules,
     save_recommendation_result,
 ]
@@ -163,6 +174,18 @@ async def run_data_retrieval_agent(complaint_id: str):
         f"Category: {category}\n"
         f"Extracted Data: {extracted_data}\n"
     )
+
+    refusal_reason = complaint.get("refusal_reason")
+    if refusal_reason in SUPPORTED_MORTGAGE_REFUSAL_REASONS:
+        input_text += (
+            f"\nRefusal Reason: {refusal_reason}\n"
+            "This is a mortgage application rejection complaint. "
+            "Use `retrieve_mortgage_assessment` with the complaint_id and refusal_reason to get underwriting data. "
+            "Base the recommendation on the mortgage refusal reason and mortgage assessment first. "
+            "Do not rely on generic account/card complaint rules.\n"
+        )
+    else:
+        input_text += "\nUse the existing generic complaint decision flow.\n"
 
     agent = _build_agent()
     handler = get_langfuse_handler(complaint_id)
