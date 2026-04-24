@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-import openai
+from langfuse.openai import openai
 from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_openai import ChatOpenAI
@@ -16,6 +16,7 @@ from pypdf.errors import PdfReadError, PdfStreamError
 
 from database import create_agent_log, get_complaint_by_id, save_extracted_data, update_complaint_status
 from schemas import ComplaintStatus
+from tracing import get_langfuse_handler, observe
 
 
 class ExtractedComplaint(BaseModel):
@@ -244,6 +245,7 @@ def _stringify_message_content(message) -> str:
     return str(content)
 
 
+@observe(name="extraction-agent")
 async def run_extraction_agent(complaint_id: str):
     complaint = await get_complaint_by_id(complaint_id)
     if not complaint:
@@ -276,9 +278,12 @@ async def run_extraction_agent(complaint_id: str):
         input_text += "\nNo files attached. Use the complaint message as the source text."
 
     agent = _build_agent()
+    handler = get_langfuse_handler(complaint_id)
+    invoke_config = {"callbacks": [handler]} if handler else {}
     result = await asyncio.to_thread(
         agent.invoke,
         {"messages": [{"role": "user", "content": input_text}]},
+        invoke_config,
     )
 
     await update_complaint_status(complaint_id, ComplaintStatus.data_extracted)
