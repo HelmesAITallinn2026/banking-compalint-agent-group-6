@@ -1,0 +1,30 @@
+Flow:
+- User enter Customer View
+- User choose “complaint form”
+- Fills up COMPLAINT FORM [name surname preloaded; subject; message; refusal reason preloaded; files input]
+- Sends complaint
+- Complain goes FrontEnd -> BackEnd
+- BE stores complaint in DB with status
+- BE sends complaint to ExtractionAgent
+    - ExtractionAgent analyses document type
+    - ExtractionAgent reads document directly or OCR it
+    - ExtractionAgent extract data from document content
+    - ExtractionAgent checks if data is relevant:
+        - ExtractionAgent checks the needed document for this type of case
+        - ExtractionAgent validates if provided data is relevant (it may be image of cat instead of income proof)
+        - ExtractionAgent validates if provided data is enough to push form further (if the needed documents were applied, in general if we have data to work on)
+        - If yes, process go further
+        - If no, ExtractionAgent passes flow to Drafting Agent to create Negative response with “insufficient document” response
+    - Prepared form with exctracted data is passed to CategorizationAgent
+    - CategorizationAgent pulls categorisation rules from DB / Backend
+    - CategorizationAgent categories ticket and add it to the ticket data
+    - Ticket datapoint is passed to DataRetrievalAgent (DRA)
+    - DRA retrieves all necessary data from backend
+    - DRA give recommendations whether decision should be POSITIVE or NEGATIVE.
+    - Recommendation is saved to DB (through backend)
+- On frontend (admin panel) complaint is loaded with current status: “Recommendation from system”
+- Human approves recommendation or not
+- DraftingAgent gets Complaint DataPoint with decision (verified by human) and draft message Saving it to DB (through backend)
+- Draft is loaded in frontend with ability to change it’s content (let’s assume decision can’t be changed here - just for simplicity)
+- After adjustments to text (or not) message is sent to customer
+- Complaint status is marked as completed.
