@@ -150,7 +150,8 @@ def ocr_document(file_path: str) -> dict:
         ],
     )
 
-    return {"text": response.choices[0].message.content or "", "file_path": file_path}
+    extracted_text = (response.choices[0].message.content or "").strip()
+    return {"text": extracted_text, "file_path": file_path}
 
 
 @tool
