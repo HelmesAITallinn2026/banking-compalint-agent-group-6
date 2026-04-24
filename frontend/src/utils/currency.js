@@ -16,8 +16,17 @@ export function toEUR(amount, currency) {
   return amount * rate
 }
 
+// Locale map: use each currency's native locale so symbols render without country prefix
+// (e.g. en-GB formats USD as "US$" to distinguish from £; en-US formats it as "$").
+const CURRENCY_LOCALE = {
+  USD: 'en-US',
+  EUR: 'de-DE',
+  GBP: 'en-GB',
+}
+
 export function formatCurrency(amount, currency) {
-  return new Intl.NumberFormat('en-GB', {
+  const locale = CURRENCY_LOCALE[currency?.toUpperCase()] ?? 'en-US'
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,

@@ -79,7 +79,7 @@ WITH target_customer AS (
     LIMIT 1
 )
 INSERT INTO bank_account (customer_id, account_number, currency, balance, account_type)
-SELECT id, 'GB29NWBK60161331926819', 'USD', 5420.75, 'SAVINGS'
+SELECT id, 'US29NWBK60161331926819', 'USD', 5420.75, 'SAVINGS'
 FROM target_customer
 ON CONFLICT (account_number)
 DO UPDATE SET
@@ -95,7 +95,7 @@ WITH target_customer AS (
     LIMIT 1
 )
 INSERT INTO bank_account (customer_id, account_number, currency, balance, account_type)
-SELECT id, 'FR7630006000011234567890189', 'GBP', 2310.00, 'CREDIT'
+SELECT id, 'GB7630006000011234567890189', 'GBP', 2310.00, 'CREDIT'
 FROM target_customer
 ON CONFLICT (account_number)
 DO UPDATE SET

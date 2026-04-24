@@ -28,5 +28,11 @@ export const getComplaints = (status) =>
 export const getComplaint = (id) =>
   api.get(`/api/complaints/${id}`).then((r) => r.data)
 
+export const getComplaintAttachments = (complaintId) =>
+  api.get(`/api/complaints/${complaintId}/attachments`).then((r) => r.data)
+
+export const getAttachmentFileUrl = (attachmentId) =>
+  `${api.defaults.baseURL}/api/attachments/${attachmentId}/file`
+
 export const approveComplaint = (id) =>
   api.post(`/api/complaints/${id}/approve`).then((r) => r.data)

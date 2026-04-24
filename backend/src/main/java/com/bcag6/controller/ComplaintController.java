@@ -1,7 +1,9 @@
 package com.bcag6.controller;
 
+import com.bcag6.dto.AttachmentDto;
 import com.bcag6.dto.ComplaintDto;
 import com.bcag6.entity.ComplaintAttachment;
+import com.bcag6.service.AttachmentService;
 import com.bcag6.service.ComplaintService;
 import com.bcag6.service.FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +27,7 @@ public class ComplaintController {
 
     private final ComplaintService complaintService;
     private final FileStorageService fileStorageService;
+    private final AttachmentService attachmentService;
 
     @GetMapping
     @Operation(summary = "Get all complaints with optional status filter")
@@ -63,5 +66,11 @@ public class ComplaintController {
     @Operation(summary = "Approve draft and send email — sets status to Completed")
     public ResponseEntity<ComplaintDto> approve(@PathVariable Long id) {
         return ResponseEntity.ok(complaintService.approveComplaint(id));
+    }
+
+    @GetMapping("/{id}/attachments")
+    @Operation(summary = "List attachments for a complaint")
+    public ResponseEntity<List<AttachmentDto>> getAttachments(@PathVariable Long id) {
+        return ResponseEntity.ok(attachmentService.getAttachmentsByComplaintId(id));
     }
 }
