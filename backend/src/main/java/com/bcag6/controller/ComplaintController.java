@@ -36,6 +36,12 @@ public class ComplaintController {
         return ResponseEntity.ok(complaintService.getComplaints(status));
     }
 
+    @GetMapping("/by-status/{statusId}")
+    @Operation(summary = "Get complaints by status ID")
+    public ResponseEntity<List<ComplaintDto>> getByStatusId(@PathVariable Integer statusId) {
+        return ResponseEntity.ok(complaintService.getComplaintsByStatusId(statusId));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get complaint by ID")
     public ResponseEntity<ComplaintDto> getById(@PathVariable Long id) {

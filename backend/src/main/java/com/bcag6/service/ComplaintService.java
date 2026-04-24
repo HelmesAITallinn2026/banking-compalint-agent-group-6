@@ -45,6 +45,11 @@ public class ComplaintService {
     }
 
     @Transactional(readOnly = true)
+    public List<ComplaintDto> getComplaintsByStatusId(Integer statusId) {
+        return complaintMapper.toDtoList(complaintRepository.findByStatusIdWithDetails(statusId));
+    }
+
+    @Transactional(readOnly = true)
     public ComplaintDto getComplaintById(Long id) {
         Complaint complaint = complaintRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
