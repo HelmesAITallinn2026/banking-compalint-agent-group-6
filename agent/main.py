@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 from database import DATABASE_PATH, UPLOADS_DIR, create_complaint, create_file_record, get_complaint_by_id, init_db
+from model_pricing import register_model_prices
 from pipeline import run_drafting_pipeline, run_extraction_pipeline
 from schemas import ComplaintDetail, ComplaintFormResponse, ComplaintStatus, DraftResponseRequest, DraftResponseResponse
 
@@ -16,6 +17,7 @@ from schemas import ComplaintDetail, ComplaintFormResponse, ComplaintStatus, Dra
 @asynccontextmanager
 async def lifespan(_):
     await init_db()
+    register_model_prices()
     yield
 
 app = FastAPI(title="Complaint Agent API", version="0.1.0", lifespan=lifespan)

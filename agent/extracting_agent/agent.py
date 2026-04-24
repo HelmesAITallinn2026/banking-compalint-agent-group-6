@@ -35,6 +35,7 @@ def _build_chat_model(model_name: str | None = None) -> ChatOpenAI:
         api_key=os.getenv("OPENROUTER_API_KEY") or "test-key",
         base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         temperature=0,
+        model_kwargs={"extra_body": {"usage": {"include": True}}},
     )
 
 
@@ -149,6 +150,7 @@ def ocr_document(file_path: str) -> dict:
                 ],
             }
         ],
+        extra_body={"usage": {"include": True}},
     )
 
     extracted_text = (response.choices[0].message.content or "").strip()
