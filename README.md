@@ -29,9 +29,23 @@ See [database/README.md](database/README.md) for rollback instructions.
 
 ## 2. Backend
 
-> Spring Boot project — scaffold coming soon.
+Spring Boot 3.4.3 / Java 21 project in the `backend/` folder.
 
-Default URL: `http://localhost:8080`
+```bash
+cd backend
+
+# Build (use project-local settings to bypass corporate Maven mirror)
+mvn -s .mvn\settings.xml compile
+
+# Run
+mvn -s .mvn\settings.xml spring-boot:run
+```
+
+Default URL: `http://localhost:8080`  
+Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+The database connection is configured in [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties).  
+Run the database scripts first (Step 1) before starting the backend.
 
 ---
 
