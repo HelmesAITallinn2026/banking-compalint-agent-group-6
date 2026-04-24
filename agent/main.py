@@ -10,6 +10,7 @@ load_dotenv()
 
 from database import DATABASE_PATH, UPLOADS_DIR, create_complaint, create_file_record, get_complaint_by_id, init_db
 from model_pricing import register_model_prices
+from mortgage_rules import is_supported_mortgage_refusal_reason
 from pipeline import run_drafting_pipeline, run_extraction_pipeline
 from schemas import ComplaintDetail, ComplaintFormResponse, ComplaintStatus, DraftResponseRequest, DraftResponseResponse
 
@@ -40,6 +41,16 @@ async def submit_complaint_form(
     refusal_reason: str | None = Form(default=None),
     files: list[UploadFile] = File(default=[]),
 ):
+    if refusal_reason is not None and refusal_reason != "" and not is_supported_mortgage_refusal_reason(refusal_reason):
+        raise HTTPException(
+            status_code=422,
+            detail="refusal_reason must be one of: not_enough_income, not_enough_transactions, wrong_or_incomplete_documents",
+        )
+
+    # Normalize empty string to None
+    if refusal_reason == "":
+        refusal_reason = None
+
     complaint_id = await create_complaint(first_name, last_name, subject, message, refusal_reason)
 
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
