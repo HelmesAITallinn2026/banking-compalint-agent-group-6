@@ -132,6 +132,24 @@ public class ComplaintService {
     }
 
     @Transactional
+    public ComplaintDto updateDraftEmail(Long id, String subject, String body) {
+        Complaint complaint = complaintRepository.findByIdWithDetails(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
+
+        complaint.setDraftEmailSubject(subject);
+        complaint.setDraftEmailBody(body);
+        complaintRepository.save(complaint);
+
+        writeAuditLog("COMPLAINT", id, AuditAction.UPDATE,
+            "{\"action\":\"updateDraftEmail\"}");
+
+        return complaintMapper.toDto(
+            complaintRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new IllegalStateException("Complaint not found after update."))
+        );
+    }
+
+    @Transactional
     public ComplaintDto changeStatus(Long id, Integer statusId) {
         Complaint complaint = complaintRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));

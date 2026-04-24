@@ -85,6 +85,15 @@ public class ComplaintController {
         return ResponseEntity.ok(complaintService.changeStatus(id, statusId));
     }
 
+    @PatchMapping("/{id}/draft-email")
+    @Operation(summary = "Update draft email subject and body")
+    public ResponseEntity<ComplaintDto> updateDraftEmail(
+            @PathVariable Long id,
+            @RequestParam String subject,
+            @RequestParam String body) {
+        return ResponseEntity.ok(complaintService.updateDraftEmail(id, subject, body));
+    }
+
     @GetMapping("/{id}/attachments")
     @Operation(summary = "List attachments for a complaint")
     public ResponseEntity<List<AttachmentDto>> getAttachments(@PathVariable Long id) {
