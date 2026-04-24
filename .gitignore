@@ -107,6 +107,15 @@ lc_cache/
 secrets.yaml
 secrets.yml
 
+# Node.js
+node_modules/
+dist/
+.next/
+.nuxt/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # OS
 .DS_Store
 Thumbs.db
