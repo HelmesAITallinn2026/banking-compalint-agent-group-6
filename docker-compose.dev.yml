@@ -1,0 +1,93 @@
+# Dev stack — all four services on one machine
+# Start:  docker compose -f docker-compose.dev.yml up --build
+# Ports:  frontend :5173 | backend :8080 | agent :8000 | postgres :5433
+
+services:
+
+  # ── PostgreSQL (shared by backend) ──────────────────────────
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bca-g6
+      POSTGRES_USER: bca_g6_app
+      POSTGRES_PASSWORD: bca_g6_app_change_me
+    ports:
+      - "5433:5432"
+    volumes:
+      # 01/02 run automatically on first start; 00 is skipped (docker handles DB+role creation)
+      - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bca_g6_app -d bca-g6"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  # ── Spring Boot backend ─────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bca-g6
+      SPRING_DATASOURCE_USERNAME: bca_g6_app
+      SPRING_DATASOURCE_PASSWORD: bca_g6_app_change_me
+    volumes:
+      - ./backend/src:/app/src:ro
+
+  # ── FastAPI agent service ───────────────────────────────────
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./agent/.env
+    volumes:
+      # Hot-reload: mount source files (exclude .venv and uploads)
+      - ./agent/main.py:/app/main.py:ro
+      - ./agent/schemas.py:/app/schemas.py:ro
+      - ./agent/database.py:/app/database.py:ro
+      - ./agent/pipeline.py:/app/pipeline.py:ro
+      - ./agent/llm_config.py:/app/llm_config.py:ro
+      - ./agent/tracing.py:/app/tracing.py:ro
+      - ./agent/model_pricing.py:/app/model_pricing.py:ro
+      - ./agent/mortgage_rules.py:/app/mortgage_rules.py:ro
+      - ./agent/extraction_agent.py:/app/extraction_agent.py:ro
+      - ./agent/extracting_agent:/app/extracting_agent:ro
+      - ./agent/categorization_agent:/app/categorization_agent:ro
+      - ./agent/data_retrieval_agent:/app/data_retrieval_agent:ro
+      - ./agent/drafting_agent:/app/drafting_agent:ro
+      - ./agent/mock_docs:/app/mock_docs:ro
+      # Persist uploads and SQLite DB
+      - agent_uploads:/app/uploads
+      - agent_db:/app/db
+
+  # ── React frontend (Vite dev server) ────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "5173:3000"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+
+volumes:
+  pgdata:
+  agent_uploads:
+  agent_db:
