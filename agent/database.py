@@ -83,6 +83,14 @@ async def update_complaint_status(complaint_id, status):
         )
 
 
+async def save_categorization(complaint_id, category):
+    async with get_db() as db:
+        await db.execute(
+            "UPDATE complaints SET category=?, status='categorised', updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (category, complaint_id),
+        )
+
+
 async def save_recommendation(complaint_id, category, recommendation, reasoning):
     async with get_db() as db:
         await db.execute(

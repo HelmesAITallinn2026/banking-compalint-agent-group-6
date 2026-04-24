@@ -2,147 +2,363 @@
 
 ## Overview
 
-This module implements an AI-powered multi-agent system for automated processing of consumer banking complaints. The system uses a linear pipeline of four specialized agents that extract data, categorize complaints, retrieve supporting information, and draft customer responses.
+`agent/` is the active backend for the hackathon demo. It exposes a FastAPI API, stores complaint state in local SQLite, runs a multi-step LLM pipeline, and keeps an audit trail of agent actions.
 
-## Coding standard and general approach
-- This is hackathon project
-- Simple is better than complex
-- We want to have demo to showcase how it's working, not a production ready app
-- 
+This is demo code. Keep it simple, readable, and easy to ship.
 
-**Tech stack:** Python, FastAPI, LangChain, LangGraph, Langfuse
+## Tech Stack
 
-## Architecture
+- Python `3.12+`
+- `uv` for env/deps
+- `FastAPI` + `uvicorn` for HTTP API
+- `aiosqlite` for async local persistence
+- `LangChain` agents via `create_agent(...)`
+- OpenRouter-backed `ChatOpenAI` models
+- `Langfuse` for optional tracing
+- `pytest` for tests
 
+## Important Paths
+
+- `main.py` — FastAPI app and endpoints
+- `database.py` — SQLite init and all DB helpers
+- `pipeline.py` — extraction + drafting pipeline entrypoints
+- `extracting_agent/` — document classification, OCR, extraction
+- `categorization_agent/` — complaint tree classification
+- `data_retrieval_agent/` — mock banking data lookup + recommendation
+- `drafting_agent/` — response letter generation
+- `schemas.py` — request/response/status models
+- `.env.example` — required env vars
+- `tests/` — current test suite
+- `uploads/` — saved complaint files
+- `complaints.db` — local SQLite DB
+
+## Local Setup
+
+From repo root:
+
+```bash
+cd agent
+uv sync
+cp .env.example .env
 ```
-Customer Complaint (form + files)
-        │
-        ▼
-┌─────────────────┐
-│ Extraction Agent │ ── analyzes documents, extracts structured data
-└────────┬────────┘
-         │ (if data incomplete → Drafting Agent for rejection)
-         ▼
-┌──────────────────────┐
-│ Categorization Agent │ ── assigns complaint category using complaint tree
-└────────┬─────────────┘
-         ▼
-┌───────────────────────┐
-│ Data Retrieval Agent  │ ── fetches internal banking data, gives recommendation
-└────────┬──────────────┘
-         │
-         ▼
-   [Human Review] ── approves/rejects recommendation
-         │
-         ▼
-┌──────────────────────┐
-│ Message Drafting Agent│ ── drafts formal response letter
-└────────┬─────────────┘
-         ▼
-   [Human Review] ── verifies draft, sends to customer
+
+## Run Commands
+
+### Start API
+
+```bash
+cd agent
+uv run uvicorn main:app --reload
+```
+
+API base: `http://localhost:8000`
+
+### Run tests
+
+```bash
+cd agent
+uv run pytest
+```
+
+### Health check
+
+```bash
+curl http://localhost:8000/health
+```
+
+### Sample submit
+
+```bash
+curl -X POST http://localhost:8000/complaint-form \
+  -F "first_name=Jane" \
+  -F "last_name=Doe" \
+  -F "subject=Card charge dispute" \
+  -F "message=I was charged twice for one purchase." \
+  -F "refusal_reason=" \
+  -F "files=@../mock_docs/helmes_bank_salary_statement.pdf"
+```
+
+### Sample fetch
+
+```bash
+curl http://localhost:8000/complaints/<complaint_id>
+```
+
+### Sample draft trigger
+
+```bash
+curl -X POST http://localhost:8000/draft-response \
+  -H "Content-Type: application/json" \
+  -d '{
+    "complaint_id": "<complaint_id>",
+    "decision": "NEGATIVE",
+    "refusal_reason": "insufficient_documents",
+    "clarification_message": "Please attach a clearer statement copy."
+  }'
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and set:
+
+```env
+OPENROUTER_API_KEY=...
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OCR_MODEL=z-ai/glm-4.6v
+EXTRACTION_MODEL=z-ai/glm-5.1
+CATEGORIZATION_MODEL=z-ai/glm-5.1
+DATA_RETRIEVAL_MODEL=z-ai/glm-5.1
+LANGFUSE_PUBLIC_KEY=...
+LANGFUSE_SECRET_KEY=...
+LANGFUSE_HOST=http://localhost:3000
+```
+
+Notes:
+
+- `OPENROUTER_API_KEY` is required for real LLM calls.
+- `LANGFUSE_*` is optional. If unset, tracing stays off.
+- Drafting agent also supports `DRAFTING_MODEL`; if unset it falls back to `openai/gpt-4o-mini`.
+
+## Optional Observability Setup
+
+From repo root:
+
+```bash
+docker compose -f docker-compose.langfuse.yml up -d
+```
+
+- Langfuse UI: `http://localhost:3000`
+- After first boot, create a project and copy keys into `agent/.env`
+
+## Runtime Flow
+
+```text
+Complaint form submit
+        |
+        v
+Extraction agent
+        |
+        +--> early NEGATIVE draft path if docs irrelevant/incomplete
+        |
+        v
+Categorization agent
+        |
+        v
+Data retrieval agent
+        |
+        v
+recommendation_ready
+        |
+        v
+Human review
+        |
+        v
+POST /draft-response
+        |
+        v
+Drafting agent
 ```
 
 ## API Endpoints
 
-- **POST /complaint-form** – Receives complaint submission
-  - Body: `first_name`, `last_name`, `subject`, `message`, `refusal_reason`, `files`
-  - Triggers the full agent pipeline starting with Extraction Agent
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/` | same payload as health |
+| `GET` | `/health` | returns `{status, database_path}` |
+| `POST` | `/complaint-form` | creates complaint, saves files, starts extraction pipeline |
+| `GET` | `/complaints/{complaint_id}` | full complaint view with files and logs |
+| `POST` | `/draft-response` | starts drafting pipeline for an existing complaint |
 
-- **POST /draft-response** – Triggers response drafting
-  - Body: `first_name`, `last_name`, `decision`, `refusal_reason`, `clarification_message`
-  - Used after human review to generate the final customer response
+### `/complaint-form` fields
+
+- `first_name`
+- `last_name`
+- `subject`
+- `message`
+- `refusal_reason` *(optional)*
+- `files` *(0..n multipart uploads)*
+
+Uploaded files are stored in `agent/uploads/` as:
+
+`<first_name>-<last_name>-<complaint_id>-<original_stem>.pdf`
+
+### `/draft-response` JSON body
+
+- `complaint_id`
+- `decision`
+- `refusal_reason` *(optional)*
+- `clarification_message` *(optional)*
+
+## Current Status Values
+
+Defined in `schemas.py`:
+
+- `submitted`
+- `data_extracted`
+- `categorised`
+- `recommendation_ready`
+- `draft_created`
+- `completed`
+
+## Database
+
+SQLite DB path: `agent/complaints.db`
+
+Tables auto-created by `init_db()`:
+
+### `complaints`
+
+- `id`
+- `first_name`
+- `last_name`
+- `subject`
+- `message`
+- `refusal_reason`
+- `status`
+- `category`
+- `recommendation`
+- `recommendation_reasoning`
+- `draft_response`
+- `extracted_data`
+- `created_at`
+- `updated_at`
+
+### `complaint_files`
+
+- `complaint_id`
+- `original_filename`
+- `stored_path`
+- `content_type`
+- `created_at`
+
+### `agent_logs`
+
+- `complaint_id`
+- `agent_name`
+- `action_type`
+- `input_context`
+- `reasoning_process`
+- `output_context`
+- `created_at`
+
+Rule: all DB reads/writes go through helpers in `database.py`.
 
 ## Agents
 
-### 1. Extraction Agent
+### 1. Extraction agent
 
-First agent in the pipeline. Processes raw complaint data and attached files.
+Files:
 
-**Responsibilities:**
-- Classify document type (structured text vs scanned image)
-- Read document content directly or via OCR
-- Extract structured data from documents
-- Validate data relevance and completeness
-- Route to Drafting Agent if documents are insufficient
+- `extracting_agent/agent.py`
+- `extraction_agent.py`
 
-**Tools:**
-- `analyze_document_type` – Determines if document can be read directly or needs OCR
-- `ocr_document` – Converts image/scanned documents to text via OCR
-- `extract_data` – Extracts structured output based on document type
-- `save_complaint_data` – Persists extracted data to DB via backend
+Responsibilities:
 
-**LLM notes:** Can use multimodal LLM with vision capabilities as an alternative to OCR.
+- Detect readable text vs image-like document
+- Extract PDF text layer when present
+- OCR image-like inputs through OpenRouter vision model
+- Produce structured complaint payload
+- Save extraction result and logs
 
-### 2. Categorization Agent
+Core tools:
 
-Assigns the correct complaint category using an externally maintained complaint tree.
+- `analyze_document_type`
+- `ocr_document`
+- `extract_data`
+- `save_complaint_data`
 
-**Responsibilities:**
-- Load complaint tree into context (LLM-optimized format)
-- Categorize the complaint ticket
-- Save categorization for human verification
+### 2. Categorization agent
 
-**Tools:**
-- `load_complaint_tree` – Loads/formats complaint tree from DB into context
-- `save_categorization` – Persists category assignment
+Files:
 
-**Design note:** Simplest agent in the pipeline. Could be implemented as a single tool rather than a standalone agent if complexity stays low.
+- `categorization_agent/agent.py`
+- `categorization_agent/complaint_tree.json`
 
-### 3. Data Retrieval Agent
+Responsibilities:
 
-Fetches all internal banking data needed to resolve the complaint and provides a recommendation.
+- Load complaint tree
+- Choose category + subcategory
+- Save `category > subcategory`
+- Log reasoning
 
-**Responsibilities:**
-- Determine what data is required based on complaint category and client info
-- Retrieve data from internal banking systems
-- Generate POSITIVE or NEGATIVE recommendation with reasoning
-- Log every data access operation with justification
+Core tools:
 
-**Tools:**
-- Tools connecting to internal banking system APIs (account data, transaction history, etc.)
-- `save_recommendation` – Persists recommendation to DB
+- `load_complaint_tree`
+- `save_categorization`
 
-**LLM notes:** Decision-making rules should be loaded from an external source (prompt or DB) to keep them current. Every banking API call must be documented with the reason for the request.
+### 3. Data retrieval agent
 
-### 4. Message Drafting Agent
+Files:
 
-Generates formal customer response letters.
+- `data_retrieval_agent/agent.py`
+- `data_retrieval_agent/mock_data.py`
 
-**Responsibilities:**
-- Draft response based on recommendation and customer data
-- Handle multiple trigger scenarios:
-  - End of pipeline (recommendation ready)
-  - Early exit (incomplete/invalid documents from Extraction Agent)
-  - Process failures requiring customer contact
-- Save draft in review-ready state
+Responsibilities:
 
-**Inputs considered:**
-- Data completeness status
-- Process success/failure status
-- Recommendation (positive/negative) with reasoning
+- Load decision rules
+- Pull mock customer/account/transaction data
+- Generate `POSITIVE` or `NEGATIVE` recommendation
+- Save recommendation + reasoning
 
-**Design note:** For simple cases, can be a single LLM tool call rather than a full agent.
+Core tools:
 
-## Coding Conventions
+- `retrieve_customer_details`
+- `retrieve_account_info`
+- `retrieve_transaction_history`
+- `load_decision_rules`
+- `save_recommendation_result`
 
-- Use **LangGraph** for agent orchestration and state management
-- Use **LangChain** for tools, retrievers, structured output, and document loaders
-- Use **Langfuse** for tracing, evaluation, prompt management, and cost monitoring
-- Use **FastAPI** for the HTTP API layer
-- All agents must produce structured, auditable log entries containing:
-  - Timestamp, agent identity, action type
-  - Input context, reasoning process, output
-  - Human verification events
-- Store persistent data in **SQLite** via the backend API
-- Don't focus on patterns and clean code prinicples
+### 4. Drafting agent
 
-## LLM Configuration
+Files:
 
-- **Enterprise providers:** OpenRouter
+- `drafting_agent/agent.py`
 
-## Observability
+Responsibilities:
 
-- **Langfuse** – Real-time tracing dashboard for agent runs, token usage, errors
-- **Structured DB logging** – Persistent audit trail in defined schema for compliance
-- **Alerting** – Monitor for categorization drift, latency spikes, high override rates, error rate anomalies
+- Load complaint context
+- Draft formal customer response
+- Save draft to DB
+- Support both normal review path and insufficient-docs path
 
+Core tools:
+
+- `load_complaint_context`
+- `save_draft`
+
+## Logging and Tracing
+
+Every agent run should create structured DB audit logs with:
+
+- `agent_name`
+- `action_type`
+- `input_context`
+- `reasoning_process`
+- `output_context`
+
+Langfuse tracing is wired through `tracing.py`. If keys are absent, callbacks are skipped.
+
+## Testing
+
+Current tests live under `agent/tests/`.
+
+Existing coverage:
+
+- document type detection for text PDFs
+- scanned/image-style PDFs
+- fake image bytes saved with `.pdf` suffix
+- agent builder returning compiled graph object
+
+Run with:
+
+```bash
+cd agent
+uv run pytest
+```
+
+## Repo Notes
+
+- `backend/` is not active.
+- `frontend/` is design-only right now.
+- Root `database/` SQL scripts are separate from the local SQLite runtime used by `agent/`.
+- If docs drift from code, fix docs to match current runtime behavior.
