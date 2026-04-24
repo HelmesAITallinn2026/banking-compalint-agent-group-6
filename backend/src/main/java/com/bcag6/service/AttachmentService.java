@@ -38,6 +38,15 @@ public class AttachmentService {
             .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with id: " + attachmentId));
     }
 
+    @Transactional(readOnly = true)
+    public ComplaintAttachment getAttachmentEntityForComplaint(Long complaintId, Long attachmentId) {
+        ComplaintAttachment attachment = getAttachmentEntity(attachmentId);
+        if (!attachment.getComplaint().getId().equals(complaintId)) {
+            throw new ResourceNotFoundException("Attachment " + attachmentId + " does not belong to complaint " + complaintId);
+        }
+        return attachment;
+    }
+
     public Resource streamFile(Long attachmentId) throws IOException {
         ComplaintAttachment attachment = getAttachmentEntity(attachmentId);
 
