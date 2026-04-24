@@ -1,8 +1,14 @@
 package com.bcag6.controller;
 
+import com.bcag6.dto.AgentDetailDto;
+import com.bcag6.dto.AgentLogDto;
+import com.bcag6.dto.AgentUpdateRequest;
 import com.bcag6.dto.AttachmentDto;
 import com.bcag6.dto.ComplaintDto;
+import com.bcag6.dto.GenerateDraftRequest;
 import com.bcag6.entity.ComplaintAttachment;
+import com.bcag6.service.AgentClient;
+import com.bcag6.service.AgentLogService;
 import com.bcag6.service.AttachmentService;
 import com.bcag6.service.ComplaintService;
 import com.bcag6.service.FileStorageService;
@@ -31,6 +37,8 @@ public class ComplaintController {
     private final ComplaintService complaintService;
     private final FileStorageService fileStorageService;
     private final AttachmentService attachmentService;
+    private final AgentLogService agentLogService;
+    private final AgentClient agentClient;
 
     @GetMapping
     @Operation(summary = "Get all complaints with optional status filter")
@@ -118,5 +126,45 @@ public class ComplaintController {
             .contentType(MediaType.parseMediaType(mimeType))
             .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
             .body(resource);
+    }
+
+    // ── Agent integration endpoints ─────────────────────────────────────
+
+    @PatchMapping("/{id}/agent-update")
+    @Operation(summary = "Agent pushes processing results (status, extracted data, category, recommendation, draft)")
+    public ResponseEntity<ComplaintDto> agentUpdate(
+            @PathVariable Long id,
+            @RequestBody AgentUpdateRequest request) {
+        return ResponseEntity.ok(complaintService.agentUpdate(id, request));
+    }
+
+    @GetMapping("/{id}/agent-detail")
+    @Operation(summary = "Get enriched complaint detail for agent processing")
+    public ResponseEntity<AgentDetailDto> getAgentDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(complaintService.getAgentDetail(id));
+    }
+
+    @PostMapping("/{id}/generate-draft")
+    @Operation(summary = "Operator triggers draft generation via agent")
+    public ResponseEntity<Void> generateDraft(
+            @PathVariable Long id,
+            @RequestBody GenerateDraftRequest request) {
+        complaintService.getComplaintById(id);
+        agentClient.triggerDraftGeneration(id, request);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/{id}/agent-logs")
+    @Operation(summary = "Agent pushes a processing log entry")
+    public ResponseEntity<AgentLogDto> createAgentLog(
+            @PathVariable Long id,
+            @RequestBody AgentLogDto logDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(agentLogService.createLog(id, logDto));
+    }
+
+    @GetMapping("/{id}/agent-logs")
+    @Operation(summary = "Get agent processing logs for a complaint")
+    public ResponseEntity<List<AgentLogDto>> getAgentLogs(@PathVariable Long id) {
+        return ResponseEntity.ok(agentLogService.getLogsByComplaintId(id));
     }
 }
