@@ -4,6 +4,22 @@ import useInterval from '../utils/useInterval'
 
 const TERMINAL_STATUSES = ['Draft Created', 'Completed']
 
+const blinkingStyle = `
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  .live-data-badge {
+    animation: blink 1s infinite;
+  }
+`
+
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = blinkingStyle
+  document.head.appendChild(style)
+}
+
 function formatTime(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
@@ -60,8 +76,8 @@ export default function AgentTimeline({ complaintId, complaintStatus }) {
           <span className="agent-timeline__toggle-count">{logs.length}</span>
         )}
         {!isTerminal && expanded && (
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)' }}>
-            Polling every 3s
+          <span className="live-data-badge" style={{ marginLeft: 'auto', fontSize: 12, color: 'red', fontWeight: 'bold' }}>
+            Live data
           </span>
         )}
       </button>
