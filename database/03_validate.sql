@@ -22,6 +22,13 @@ SELECT COUNT(*) AS operator_count FROM operator;
 SELECT COUNT(*) AS complaint_status_count FROM complaint_status;
 SELECT COUNT(*) AS refusal_reason_count FROM refusal_reason;
 SELECT COUNT(*) AS bank_account_count FROM bank_account;
+SELECT COUNT(*) AS complaint_count FROM complaint;
+SELECT COUNT(*) AS agent_log_count FROM agent_log;
+
+SELECT c.id, cs.name AS status, c.subject
+FROM complaint c
+JOIN complaint_status cs ON cs.id = c.status_id
+ORDER BY c.id;
 
 SELECT
     c.conname AS constraint_name,

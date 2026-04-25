@@ -140,9 +140,9 @@ async def save_recommendation(
 
 
 async def save_draft_response(complaint_id: str | int, draft_response: str) -> None:
-    # Split into subject (first line) and body
-    lines = draft_response.strip().split("\n", 1)
-    subject = lines[0][:255] if lines else "Complaint Response"
+    complaint = await get_complaint_by_id(complaint_id)
+    complaint_subject = (complaint or {}).get("subject", "").strip()
+    subject = f"RE: {complaint_subject}" if complaint_subject else "RE: Complaint"
     body = draft_response
     _agent_update(complaint_id, {
         "draftEmailSubject": subject,

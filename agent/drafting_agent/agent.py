@@ -76,14 +76,18 @@ Steps:
 3. Save the draft
 
 The letter MUST include:
-- Professional greeting with the customer's full name
 - Reference to their complaint subject and date
+- Professional greeting with the customer's full name
 - Clear statement of the decision (complaint accepted/rejected)
 - Detailed explanation referencing specific evidence and documents reviewed
 - If POSITIVE: what action the bank will take (refund, fee waiver, correction, etc.)
 - If NEGATIVE: clear reasoning why, with references to relevant policies
 - Next steps for the customer
 - Professional closing with bank name
+
+Rules what not to include in the letter:
+- Don't use em dashes "—"; use regular hyphens "-" instead
+
 
 Mortgage-specific instructions:
 - For mortgage application rejection complaints, explain the exact refusal reason.

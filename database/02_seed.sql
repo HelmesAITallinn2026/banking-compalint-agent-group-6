@@ -41,11 +41,7 @@ SELECT setval(
 INSERT INTO refusal_reason (id, name)
 VALUES
     (1, 'Insufficient credit history'),
-    (2, 'Missing required documents'),
-    (3, 'Income below minimum threshold'),
-    (4, 'Outstanding debt obligations'),
-    (5, 'Property valuation too low'),
-    (6, 'Application data mismatch')
+    (2, 'Income below minimum threshold')
 ON CONFLICT (id)
 DO UPDATE SET
     name = EXCLUDED.name;
