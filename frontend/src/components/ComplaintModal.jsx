@@ -22,6 +22,8 @@ export default function ComplaintModal({
   onGenerateDraft, generating, isRecommendationReady,
 }) {
   const [attachments, setAttachments] = useState([])
+  const [draftSubject, setDraftSubject] = useState(complaint.draftEmailSubject || '')
+  const [draftBody,    setDraftBody]    = useState(complaint.draftEmailBody    || '')
 
   // Close on Escape key
   useEffect(() => {
@@ -174,17 +176,29 @@ export default function ComplaintModal({
             <div className="modal__draft-box">
               <div className="modal__section">
                 <div className="modal__label">Draft Email Subject</div>
-                <div className="modal__value">{complaint.draftEmailSubject || '—'}</div>
+                <input
+                  className="form-input"
+                  style={{ marginTop: 4 }}
+                  value={draftSubject}
+                  onChange={(e) => setDraftSubject(e.target.value)}
+                  disabled={approving}
+                />
               </div>
               <div className="modal__section" style={{ marginBottom: 0 }}>
                 <div className="modal__label">Draft Email Body</div>
-                <div className="modal__value">{complaint.draftEmailBody || '—'}</div>
+                <textarea
+                  className="form-textarea"
+                  style={{ marginTop: 4, minHeight: 160 }}
+                  value={draftBody}
+                  onChange={(e) => setDraftBody(e.target.value)}
+                  disabled={approving}
+                />
               </div>
             </div>
             <button
               className="btn btn--accent"
               style={{ width: '100%', marginTop: 8 }}
-              onClick={() => onApprove(complaint.id)}
+              onClick={() => onApprove(complaint.id, draftSubject, draftBody)}
               disabled={approving}
             >
               {approving ? 'Approving…' : 'Approve & Send'}

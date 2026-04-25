@@ -3,6 +3,7 @@ package com.bcag6.controller;
 import com.bcag6.dto.AgentDetailDto;
 import com.bcag6.dto.AgentLogDto;
 import com.bcag6.dto.AgentUpdateRequest;
+import com.bcag6.dto.ApproveRequest;
 import com.bcag6.dto.AttachmentDto;
 import com.bcag6.dto.ComplaintDto;
 import com.bcag6.dto.GenerateDraftRequest;
@@ -81,8 +82,10 @@ public class ComplaintController {
 
     @PostMapping("/{id}/approve")
     @Operation(summary = "Approve draft and send email — sets status to Completed")
-    public ResponseEntity<ComplaintDto> approve(@PathVariable Long id) {
-        return ResponseEntity.ok(complaintService.approveComplaint(id));
+    public ResponseEntity<ComplaintDto> approve(
+            @PathVariable Long id,
+            @RequestBody(required = false) ApproveRequest req) {
+        return ResponseEntity.ok(complaintService.approveComplaint(id, req));
     }
 
     @PatchMapping("/{id}/status")

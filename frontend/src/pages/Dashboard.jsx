@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [approving,          setApproving]          = useState(false)
   const [generating,         setGenerating]         = useState(false)
   const [feedback,           setFeedback]           = useState(null)
+  const [viewMode,           setViewMode]           = useState('card') // 'card' | 'table'
 
   const loadComplaints = useCallback(async () => {
     setLoading(true)
@@ -43,10 +44,10 @@ export default function Dashboard() {
     TABS[activeTab].statuses.includes(c.status)
   )
 
-  const handleApprove = async (complaintId) => {
+  const handleApprove = async (complaintId, draftEmailSubject, draftEmailBody) => {
     setApproving(true)
     try {
-      await approveComplaint(complaintId)
+      await approveComplaint(complaintId, draftEmailSubject, draftEmailBody)
       setFeedback({ type: 'success', message: 'Complaint approved and email sent.' })
       setSelectedComplaint(null)
       await loadComplaints()
@@ -75,8 +76,24 @@ export default function Dashboard() {
     <div className="page-container">
       <Link to="/" className="back-link">← Home</Link>
 
-      <header className="page-header">
+      <header className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1>Operator Dashboard</h1>
+        <div className="view-toggle" role="group" aria-label="View mode">
+          <button
+            className={`view-toggle__btn ${viewMode === 'card' ? 'view-toggle__btn--active' : ''}`}
+            onClick={() => setViewMode('card')}
+            title="Card view"
+          >
+            ▦ Cards
+          </button>
+          <button
+            className={`view-toggle__btn ${viewMode === 'table' ? 'view-toggle__btn--active' : ''}`}
+            onClick={() => setViewMode('table')}
+            title="Table view"
+          >
+            ☰ Table
+          </button>
+        </div>
       </header>
 
       {feedback && (
@@ -115,12 +132,44 @@ export default function Dashboard() {
         </div>
       ) : visibleComplaints.length === 0 ? (
         <div className="empty-state">No complaints in this category.</div>
-      ) : (
+      ) : viewMode === 'card' ? (
         <div className="card-grid">
           {visibleComplaints.map((c) => (
             <ComplaintCard key={c.id} complaint={c} onClick={() => setSelectedComplaint(c)} />
           ))}
         </div>
+      ) : (
+        <table className="complaints-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Subject</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleComplaints.map((c) => {
+              const name =
+                c.customerName ||
+                [c.customerFirstName, c.customerLastName].filter(Boolean).join(' ') ||
+                `Customer #${c.customerId}`
+              const date = c.createdDttm
+                ? new Date(c.createdDttm).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                : '—'
+              return (
+                <tr key={c.id} className="complaints-table__row" onClick={() => setSelectedComplaint(c)}>
+                  <td>{c.id}</td>
+                  <td>{c.subject}</td>
+                  <td>{name}</td>
+                  <td>{c.status}</td>
+                  <td>{date}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       )}
 
       {selectedComplaint && (

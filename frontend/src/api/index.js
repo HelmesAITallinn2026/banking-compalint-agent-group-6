@@ -34,8 +34,8 @@ export const getComplaintAttachments = (complaintId) =>
 export const getAttachmentFileUrl = (attachmentId) =>
   `${api.defaults.baseURL}/api/attachments/${attachmentId}/file`
 
-export const approveComplaint = (id) =>
-  api.post(`/api/complaints/${id}/approve`).then((r) => r.data)
+export const approveComplaint = (id, draftEmailSubject, draftEmailBody) =>
+  api.post(`/api/complaints/${id}/approve`, { draftEmailSubject, draftEmailBody }).then((r) => r.data)
 
 export const generateDraft = (id, decision, refusalReason = null, clarificationMessage = null) =>
   api

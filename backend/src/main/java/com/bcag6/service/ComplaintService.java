@@ -2,6 +2,7 @@ package com.bcag6.service;
 
 import com.bcag6.dto.AgentDetailDto;
 import com.bcag6.dto.AgentUpdateRequest;
+import com.bcag6.dto.ApproveRequest;
 import com.bcag6.dto.ComplaintDto;
 import com.bcag6.entity.*;
 import com.bcag6.event.AiProcessingPublisher;
@@ -101,7 +102,7 @@ public class ComplaintService {
     }
 
     @Transactional
-    public ComplaintDto approveComplaint(Long id) {
+    public ComplaintDto approveComplaint(Long id, ApproveRequest req) {
         Complaint complaint = complaintRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + id));
 
@@ -109,6 +110,16 @@ public class ComplaintService {
             throw new BusinessException(
                 "Complaint must be in '" + STATUS_DRAFT + "' status to approve. " +
                 "Current status: " + complaint.getStatus().getName());
+        }
+
+        // Apply operator edits to subject/body if provided
+        if (req != null) {
+            if (req.getDraftEmailSubject() != null) {
+                complaint.setDraftEmailSubject(req.getDraftEmailSubject());
+            }
+            if (req.getDraftEmailBody() != null) {
+                complaint.setDraftEmailBody(req.getDraftEmailBody());
+            }
         }
 
         ComplaintStatus completedStatus = complaintStatusRepository.findByName(STATUS_COMPLETED)
