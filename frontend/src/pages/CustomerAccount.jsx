@@ -107,22 +107,37 @@ export default function CustomerAccount() {
         ) : customerError ? (
           <div className="error-state">{customerError}</div>
         ) : customer ? (
-          <div className="detail-row">
-            <div className="detail-item">
-              <div className="detail-label">First Name</div>
-              <div className="detail-value">{customer.firstName}</div>
+          <div className="customer-profile">
+            <div className="customer-profile__photo">
+              <img
+                src={`https://randomuser.me/api/portraits/men/${(customer.id % 70) + 1}.jpg`}
+                alt={`${customer.firstName} ${customer.lastName}`}
+                className="customer-photo"
+              />
             </div>
-            <div className="detail-item">
-              <div className="detail-label">Last Name</div>
-              <div className="detail-value">{customer.lastName}</div>
-            </div>
-            <div className="detail-item">
-              <div className="detail-label">Date of Birth</div>
-              <div className="detail-value">{customer.dob}</div>
-            </div>
-            <div className="detail-item">
-              <div className="detail-label">Email</div>
-              <div className="detail-value">{customer.email}</div>
+            <div className="customer-profile__info">
+              <div className="customer-profile__name">
+                {customer.firstName}{customer.middleName ? ` ${customer.middleName}` : ''} {customer.lastName}
+              </div>
+              <div className="customer-profile__id">Customer ID &nbsp;#{customer.id}</div>
+              <div className="customer-profile__fields">
+                <div className="profile-field">
+                  <div className="profile-field__label">First Name</div>
+                  <div className="profile-field__value">{customer.firstName}</div>
+                </div>
+                <div className="profile-field">
+                  <div className="profile-field__label">Last Name</div>
+                  <div className="profile-field__value">{customer.lastName}</div>
+                </div>
+                <div className="profile-field">
+                  <div className="profile-field__label">Date of Birth</div>
+                  <div className="profile-field__value">{customer.dob}</div>
+                </div>
+                <div className="profile-field">
+                  <div className="profile-field__label">Email</div>
+                  <div className="profile-field__value">{customer.email}</div>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}

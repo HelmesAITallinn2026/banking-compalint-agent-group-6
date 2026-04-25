@@ -221,7 +221,51 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
-/* ── Detail rows ─────────────────────────── */
+/* ── Customer profile card ───────────────── */
+.customer-profile {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+.customer-profile__photo { flex-shrink: 0; }
+.customer-photo {
+  width: 128px; height: 128px;
+  border-radius: var(--radius-card);
+  object-fit: cover;
+  border: 2px solid var(--color-border);
+  display: block;
+}
+.customer-profile__info { flex: 1; }
+.customer-profile__name {
+  font-size: 22px; font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 4px; line-height: 1.2;
+}
+.customer-profile__id {
+  display: inline-block;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-bottom: 20px;
+}
+.customer-profile__fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 32px;
+}
+.profile-field__label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.7px; color: var(--color-text-muted);
+  margin-bottom: 3px;
+}
+.profile-field__value {
+  font-size: 14px; font-weight: 500; color: var(--color-text);
+}
+
+/* ── Detail rows (legacy / shared) ──────── */
 .detail-row  { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .detail-item { flex: 1; min-width: 140px; }
 .detail-label {
@@ -436,6 +480,8 @@ body {
   .card-grid      { grid-template-columns: 1fr; }
   .modal          { padding: 24px 20px; }
   .detail-row     { flex-direction: column; gap: 10px; }
+  .customer-profile { flex-direction: column; align-items: center; text-align: center; }
+  .customer-profile__fields { grid-template-columns: 1fr; }
   .tabs           { flex-direction: column; border-bottom: none; gap: 2px; }
   .tab            { border-bottom: none; border-left: 2px solid transparent; border-radius: 4px; }
   .tab--active    { border-left-color: var(--color-text); }
