@@ -3,9 +3,12 @@
     "Mortgage Application Complaints": {
       "description": "Complaints about negative mortgage application decisions",
       "subcategories": {
-        "Not enough income": "Customer contests a negative mortgage decision based on insufficient income",
-        "Not enough transactions": "Customer contests a negative mortgage decision based on insufficient transaction history",
-        "Wrong / incomplete documents": "Customer contests a negative mortgage decision caused by missing or incomplete documents"
+        "Not enough income": "Customer contests a negative mortgage decision based on insufficient income, without providing additional income evidence",
+        "Not enough income - Customer provides income evidence": "Customer contests the insufficient income refusal and submits supporting documents (e.g. salary statements, employment contracts, tax returns) to demonstrate their income meets the threshold",
+        "Not enough transactions": "Customer contests a negative mortgage decision based on insufficient transaction history, without providing additional evidence",
+        "Not enough transactions - Customer provides transaction history": "Customer contests the insufficient transaction history refusal and submits supporting documents (e.g. bank statements, salary credit history) to prove adequate account activity",
+        "Wrong / incomplete documents": "Customer contests a negative mortgage decision caused by missing or incomplete documents, without resubmitting the missing items",
+        "Wrong / incomplete documents - Customer provides missing documents": "Customer contests the wrong or incomplete documents refusal and resubmits the required or corrected documentation to complete the application package"
       }
     },
     "Other": {

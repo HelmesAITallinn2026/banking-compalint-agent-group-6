@@ -58,3 +58,36 @@ def get_mortgage_drafting_guidance(refusal_reason: str) -> str:
         "wrong_or_incomplete_documents": "List the missing documents and invite the customer to resubmit a complete application package.",
     }
     return guidance.get(refusal_reason, "")
+
+
+def is_customer_evidence_category(category: str | None) -> bool:
+    """Return True when the category indicates the customer submitted counter-evidence."""
+    return bool(category and "customer provides" in category.lower())
+
+
+def get_customer_evidence_drafting_guidance(refusal_reason: str | None) -> str:
+    """Return extra drafting guidance for cases where the customer submitted supporting documents."""
+    guidance = {
+        "not_enough_income": (
+            "The customer has submitted income evidence to contest the refusal. "
+            "Acknowledge the documents received. "
+            "If the decision is POSITIVE, confirm that the evidence demonstrates sufficient income and the application will proceed. "
+            "If the decision is NEGATIVE, explain specifically why the submitted documents are still insufficient against the bank's income threshold."
+        ),
+        "not_enough_transactions": (
+            "The customer has submitted transaction history to contest the refusal. "
+            "Acknowledge the documents received. "
+            "If the decision is POSITIVE, confirm that the submitted transaction history meets the bank's requirements and the application will proceed. "
+            "If the decision is NEGATIVE, explain specifically what transaction activity is still missing or insufficient."
+        ),
+        "wrong_or_incomplete_documents": (
+            "The customer has resubmitted documentation to contest the refusal. "
+            "Acknowledge the documents received. "
+            "If the decision is POSITIVE, confirm that the documentation is now complete and the application will be reviewed. "
+            "If the decision is NEGATIVE, clearly list which required documents are still missing or do not meet requirements."
+        ),
+    }
+    return guidance.get(refusal_reason or "", (
+        "The customer has submitted supporting documents to contest the decision. "
+        "Acknowledge the evidence provided and explain how it was evaluated in the decision."
+    ))

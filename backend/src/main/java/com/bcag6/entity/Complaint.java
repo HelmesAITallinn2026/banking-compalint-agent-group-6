@@ -70,8 +70,8 @@ public class Complaint {
     @PrePersist
     protected void onCreate() {
         OffsetDateTime now = OffsetDateTime.now();
-        createdDttm = now;
-        updatedDttm = now;
+        if (createdDttm == null) createdDttm = now;
+        if (updatedDttm == null) updatedDttm = now;
     }
 
     @PreUpdate
