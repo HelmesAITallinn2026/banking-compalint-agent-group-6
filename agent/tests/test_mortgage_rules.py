@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from mortgage_rules import (
     get_expected_mortgage_category,
     get_mortgage_drafting_guidance,
@@ -5,6 +8,9 @@ from mortgage_rules import (
     should_early_reject_mortgage_case,
     should_treat_as_mortgage_denial,
 )
+
+
+COMPLAINT_TREE_PATH = Path(__file__).resolve().parent.parent / "categorization_agent" / "complaint_tree.json"
 
 
 def test_supported_reasons_accepted():
@@ -57,10 +63,17 @@ def test_no_early_reject_for_income_reason():
     )
 
 
-def test_expected_mortgage_category_points_to_mortgage_rejection():
-    assert get_expected_mortgage_category() == (
-        "Loan Complaints",
-        "Mortgage Application Rejection",
+def test_expected_mortgage_category_uses_income_reason_label():
+    assert get_expected_mortgage_category("not_enough_income") == (
+        "Mortgage Application Complaints",
+        "Not enough income",
+    )
+
+
+def test_expected_mortgage_category_falls_back_to_general_mortgage_complaint():
+    assert get_expected_mortgage_category("unknown_reason") == (
+        "Other",
+        "General Mortgage Application Complaint",
     )
 
 
@@ -77,3 +90,17 @@ def test_income_reason_includes_income_guidance():
 def test_transaction_reason_includes_transaction_guidance():
     guidance = get_mortgage_drafting_guidance("not_enough_transactions")
     assert "transaction" in guidance.lower()
+
+
+def test_complaint_tree_matches_mortgage_application_domain():
+    complaint_tree = json.loads(COMPLAINT_TREE_PATH.read_text(encoding="utf-8"))["complaint_tree"]
+
+    assert set(complaint_tree) == {"Mortgage Application Complaints", "Other"}
+    assert set(complaint_tree["Mortgage Application Complaints"]["subcategories"]) == {
+        "Not enough income",
+        "Not enough transactions",
+        "Wrong / incomplete documents",
+    }
+    assert complaint_tree["Other"]["subcategories"] == {
+        "General Mortgage Application Complaint": "General mortgage application issue not covered by specific refusal reasons"
+    }
