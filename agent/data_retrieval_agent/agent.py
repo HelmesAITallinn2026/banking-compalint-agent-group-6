@@ -16,7 +16,7 @@ from data_retrieval_agent.mock_data import (
     get_transaction_history,
 )
 from data_retrieval_agent.mortgage_mock_data import build_mortgage_assessment
-from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS
+from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS, is_customer_evidence_category
 from tracing import get_langfuse_handler, observe
 
 
@@ -108,6 +108,7 @@ Rules:
 - ALWAYS load decision rules first
 - For generic complaints: retrieve ALL data (customer, accounts, transactions) before deciding
 - For mortgage-denial complaints: also call `retrieve_mortgage_assessment` with the complaint_id and refusal_reason, and base your recommendation primarily on the mortgage assessment
+- When the complaint category indicates the customer has submitted counter-evidence (e.g. "Customer provides income evidence"), carefully evaluate the Extracted Data for the submitted documents and assess whether they satisfy the bank's requirements. This evidence must be weighed in your recommendation.
 - Log WHY you are retrieving each piece of data
 - Your reasoning must reference specific data points
 - Call save_recommendation_result at the end
@@ -186,6 +187,14 @@ async def run_data_retrieval_agent(complaint_id: str):
         )
     else:
         input_text += "\nUse the existing generic complaint decision flow.\n"
+
+    if is_customer_evidence_category(category):
+        input_text += (
+            "\nIMPORTANT: The complaint category shows the customer has submitted supporting documents "
+            "to contest the original decision. The Extracted Data field contains information about those documents. "
+            "You MUST evaluate this customer-provided evidence and factor it into your recommendation. "
+            "Clearly state in your reasoning whether the evidence is sufficient to overturn the original decision.\n"
+        )
 
     agent = _build_agent()
     handler = get_langfuse_handler(complaint_id)

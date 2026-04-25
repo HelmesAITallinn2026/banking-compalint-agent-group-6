@@ -9,7 +9,7 @@ from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
 from backend_client import create_agent_log, get_complaint_by_id, save_draft_response, update_complaint_status
-from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS, get_mortgage_drafting_guidance
+from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS, get_mortgage_drafting_guidance, get_customer_evidence_drafting_guidance, is_customer_evidence_category
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe
 
@@ -91,6 +91,11 @@ Mortgage-specific instructions:
 - If refusal reason is not_enough_transactions, mention the insufficient transaction history and what activity evidence is needed.
 - If refusal reason is wrong_or_incomplete_documents, list or reference the missing documents and request resubmission.
 
+Customer counter-claim instructions:
+- When the complaint category shows the customer submitted supporting documents (e.g. "Customer provides income evidence"), explicitly acknowledge the documents they provided.
+- If POSITIVE: confirm that the submitted evidence has been reviewed and accepted, and state what action follows.
+- If NEGATIVE: explain specifically why the submitted documents are still insufficient, referencing the relevant policy or threshold.
+
 Tone: Formal, empathetic, clear. Use professional banking language.
 Sign as: "Customer Relations Department, Helmes Bank"
 
@@ -159,6 +164,14 @@ async def run_drafting_agent(
         input_text += f"Refusal Reason: {refusal_reason}\n"
     if refusal_reason in SUPPORTED_MORTGAGE_REFUSAL_REASONS:
         input_text += f"Mortgage Draft Guidance: {get_mortgage_drafting_guidance(refusal_reason)}\n"
+
+    category = complaint.get("category", "")
+    if is_customer_evidence_category(category):
+        input_text += (
+            f"\nCategory: {category}\n"
+            f"Customer Evidence Guidance: {get_customer_evidence_drafting_guidance(refusal_reason)}\n"
+        )
+
     if clarification_message:
         input_text += f"Clarification Message: {clarification_message}\n"
 
