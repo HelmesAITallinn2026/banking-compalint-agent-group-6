@@ -41,6 +41,10 @@ export default function ComplaintModal({
     [complaint.customerFirstName, complaint.customerLastName].filter(Boolean).join(' ') ||
     `Customer #${complaint.customerId}`
 
+  const recommendedDecision =
+    complaint.recommendation === 'NEGATIVE' ? 'NEGATIVE' : 'POSITIVE'
+  const alternateDecision = recommendedDecision === 'POSITIVE' ? 'NEGATIVE' : 'POSITIVE'
+
   return (
     <div
       className="modal-overlay"
@@ -150,18 +154,18 @@ export default function ComplaintModal({
                 <button
                   className="btn btn--accent"
                   style={{ flex: 1 }}
-                  onClick={() => onGenerateDraft(complaint.id, 'POSITIVE')}
+                  onClick={() => onGenerateDraft(complaint.id, recommendedDecision)}
                   disabled={generating}
                 >
-                  {generating ? 'Generating…' : '✓ Accept (Positive)'}
+                  {generating ? 'Generating…' : 'Maintain recommendation'}
                 </button>
                 <button
                   className="btn btn--outline"
                   style={{ flex: 1 }}
-                  onClick={() => onGenerateDraft(complaint.id, 'NEGATIVE')}
+                  onClick={() => onGenerateDraft(complaint.id, alternateDecision)}
                   disabled={generating}
                 >
-                  {generating ? 'Generating…' : '✗ Reject (Negative)'}
+                  {generating ? 'Generating…' : `Reject recommendation (So decision will be ${alternateDecision})`}
                 </button>
               </div>
             </div>
