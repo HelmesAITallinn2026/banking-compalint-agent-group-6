@@ -112,6 +112,7 @@ Rules:
 - Log WHY you are retrieving each piece of data
 - Your reasoning must reference specific data points
 - Call save_recommendation_result at the end
+- Don't use em dashes "—"; use regular hyphens "-" instead
 
 Do not skip steps. Do not invent data.
 """
