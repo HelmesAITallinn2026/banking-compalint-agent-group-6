@@ -8,9 +8,9 @@ class MortgageRefusalReason(StrEnum):
 
 
 MORTGAGE_REFUSAL_REASON_LABELS = {
-    MortgageRefusalReason.not_enough_income: "Not enough income",
-    MortgageRefusalReason.not_enough_transactions: "Not enough transactions",
-    MortgageRefusalReason.wrong_or_incomplete_documents: "Wrong / incomplete documents",
+    MortgageRefusalReason.not_enough_income.value: "Not enough income",
+    MortgageRefusalReason.not_enough_transactions.value: "Not enough transactions",
+    MortgageRefusalReason.wrong_or_incomplete_documents.value: "Wrong / incomplete documents",
 }
 
 SUPPORTED_MORTGAGE_REFUSAL_REASONS = {r.value for r in MortgageRefusalReason}
@@ -45,8 +45,10 @@ def should_early_reject_mortgage_case(
     return len(missing) > 0
 
 
-def get_expected_mortgage_category() -> tuple[str, str]:
-    return ("Loan Complaints", "Mortgage Application Rejection")
+def get_expected_mortgage_category(refusal_reason: str | None = None) -> tuple[str, str]:
+    if refusal_reason in MORTGAGE_REFUSAL_REASON_LABELS:
+        return ("Mortgage Application Complaints", MORTGAGE_REFUSAL_REASON_LABELS[refusal_reason])
+    return ("Other", "General Mortgage Application Complaint")
 
 
 def get_mortgage_drafting_guidance(refusal_reason: str) -> str:

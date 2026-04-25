@@ -1,44 +1,17 @@
 {
   "complaint_tree": {
-    "Account Issues": {
-      "description": "Problems related to bank accounts",
+    "Mortgage Application Complaints": {
+      "description": "Complaints about negative mortgage application decisions",
       "subcategories": {
-        "Unauthorized Transactions": "Customer reports transactions they did not authorize",
-        "Account Closure Disputes": "Issues with closing or closed accounts",
-        "Fee Disputes": "Disagreements about account fees or charges",
-        "Account Access Issues": "Problems accessing online/mobile banking or ATM"
-      }
-    },
-    "Loan Complaints": {
-      "description": "Issues with loans and credit products",
-      "subcategories": {
-        "Interest Rate Disputes": "Customer disputes the applied interest rate",
-        "Mortgage Application Rejection": "Customer contests a rejected mortgage application",
-        "Loan Denial": "Customer contests loan application rejection",
-        "Payment Processing Errors": "Payments not applied correctly or lost",
-        "Early Repayment Issues": "Problems with prepaying or settling loans early"
-      }
-    },
-    "Card Complaints": {
-      "description": "Credit/debit card related issues",
-      "subcategories": {
-        "Fraud / Unauthorized Charges": "Fraudulent or unauthorized card transactions",
-        "Billing Errors": "Incorrect amounts charged to card",
-        "Card Blocking Issues": "Card unexpectedly blocked or restricted"
-      }
-    },
-    "Service Quality": {
-      "description": "Issues with bank service quality",
-      "subcategories": {
-        "Staff Behavior": "Unprofessional or rude staff conduct",
-        "Processing Delays": "Unreasonable delays in processing requests",
-        "Communication Issues": "Lack of or poor communication from the bank"
+        "Not enough income": "Customer contests a negative mortgage decision based on insufficient income",
+        "Not enough transactions": "Customer contests a negative mortgage decision based on insufficient transaction history",
+        "Wrong / incomplete documents": "Customer contests a negative mortgage decision caused by missing or incomplete documents"
       }
     },
     "Other": {
-      "description": "Complaints not fitting other categories",
+      "description": "Mortgage application complaints not fitting the main refusal reasons",
       "subcategories": {
-        "General Banking Complaint": "General issues not covered by specific categories"
+        "General Mortgage Application Complaint": "General mortgage application issue not covered by specific refusal reasons"
       }
     }
   }

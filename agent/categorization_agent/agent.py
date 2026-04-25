@@ -10,7 +10,7 @@ from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 
 from backend_client import create_agent_log, get_complaint_by_id, save_categorization as _save_cat, update_complaint_status
-from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS
+from mortgage_rules import SUPPORTED_MORTGAGE_REFUSAL_REASONS, get_expected_mortgage_category
 from schemas import ComplaintStatus
 from tracing import get_langfuse_handler, observe
 
@@ -73,7 +73,7 @@ Your job is to:
 Rules:
 - ALWAYS start by calling `load_complaint_tree` to see available categories
 - Choose exactly one category and one subcategory
-- If no subcategory fits well, use the closest match or fall back to "Other > General Banking Complaint"
+- If no subcategory fits well, use the closest match or fall back to "Other > General Mortgage Application Complaint"
 - Provide clear reasoning for your choice
 - ALWAYS call `save_categorization` before finishing
 - Do not skip steps or invent tool results
@@ -131,10 +131,15 @@ async def run_categorization_agent(complaint_id: str):
     if extracted_data:
         input_text += f"\nExtracted Data:\n{extracted_data}\n"
 
-    if complaint.get("refusal_reason") in SUPPORTED_MORTGAGE_REFUSAL_REASONS:
+    refusal_reason = complaint.get("refusal_reason")
+    if refusal_reason:
+        input_text += f"Refusal Reason: {refusal_reason}\n"
+
+    if refusal_reason in SUPPORTED_MORTGAGE_REFUSAL_REASONS:
+        preferred_category, preferred_subcategory = get_expected_mortgage_category(refusal_reason)
         input_text += (
             "\nThis complaint is a mortgage-decision complaint. "
-            "Prefer Loan Complaints > Mortgage Application Rejection unless the complaint text clearly contradicts that.\n"
+            f"Prefer {preferred_category} > {preferred_subcategory} unless the complaint text clearly contradicts that.\n"
         )
 
     agent = _build_agent()
