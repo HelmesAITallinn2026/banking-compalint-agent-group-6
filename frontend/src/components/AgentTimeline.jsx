@@ -10,7 +10,7 @@ const blinkingStyle = `
     50%, 100% { opacity: 0; }
   }
   .live-data-badge {
-    animation: blink 1s infinite;
+    animation: blink 2s infinite;
   }
 `
 
